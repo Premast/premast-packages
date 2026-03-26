@@ -1,4 +1,5 @@
 node_modules/
+.embold/
 dist/
 .next/
 .env
@@ -6,3 +7,6 @@ dist/
 .env*.local
 *.tsbuildinfo
 .turbo/
+
+# CLI build artifact (copied from templates/starter by build:cli script)
+packages/create-premast-site/template/

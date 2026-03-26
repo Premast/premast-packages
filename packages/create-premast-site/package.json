@@ -1,0 +1,20 @@
+{
+  "name": "create-premast-site",
+  "version": "0.1.0",
+  "description": "Scaffold a new Premast site with plugins",
+  "type": "module",
+  "bin": {
+    "create-premast-site": "./src/index.js"
+  },
+  "files": [
+    "src",
+    "template"
+  ],
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "dependencies": {
+    "@clack/prompts": "^0.9.1",
+    "picocolors": "^1.1.1"
+  }
+}

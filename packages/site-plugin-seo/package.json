@@ -1,10 +1,12 @@
 {
   "name": "@premast/site-plugin-seo",
   "version": "0.1.0",
-  "private": true,
   "type": "module",
   "exports": {
     ".": "./src/index.js"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
   },
   "peerDependencies": {
     "mongoose": "^9.0.0",

@@ -1,5 +1,4 @@
-import { ThemeRootVars } from "@premast/site-core/theme";
-import { designTokens } from "@/theme/tokens";
+import { ThemeRootVars } from "@/theme/ThemeRootVars";
 import { AntdProvider } from "./antd-provider";
 import "./globals.css";
 
@@ -12,7 +11,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>
-        <ThemeRootVars tokens={designTokens} />
+        <ThemeRootVars />
         <AntdProvider>
           {children}
         </AntdProvider>

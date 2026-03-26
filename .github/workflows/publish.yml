@@ -1,0 +1,60 @@
+name: Publish Packages
+
+on:
+  push:
+    tags:
+      - "v*" # Triggers on version tags like v0.1.0, v1.0.0
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://npm.pkg.github.com"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build CLI (copy template)
+        run: pnpm build:cli
+
+      - name: Set version from tag
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          echo "Publishing version: $VERSION"
+          # Update all package versions to match the tag
+          pnpm -r exec -- npm version "$VERSION" --no-git-tag-version --allow-same-version
+
+      - name: Publish @premast/site-core
+        run: pnpm --filter @premast/site-core publish --no-git-checks --access restricted
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish @premast/site-blocks
+        run: pnpm --filter @premast/site-blocks publish --no-git-checks --access restricted
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish @premast/site-plugin-seo
+        run: pnpm --filter @premast/site-plugin-seo publish --no-git-checks --access restricted
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish create-premast-site
+        run: pnpm --filter create-premast-site publish --no-git-checks --access restricted
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

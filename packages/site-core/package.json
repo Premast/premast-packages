@@ -1,14 +1,17 @@
 {
   "name": "@premast/site-core",
   "version": "0.1.0",
-  "private": true,
   "type": "module",
+  "main": "./src/index.js",
   "exports": {
     ".": "./src/index.js",
     "./admin": "./src/admin/index.js",
     "./theme": "./src/theme/index.js",
     "./db": "./src/db/index.js",
     "./api": "./src/api/index.js"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
   },
   "peerDependencies": {
     "mongoose": "^9.0.0",

@@ -24,6 +24,21 @@ premast-packages/
 | Plugins | `@premast/site-plugin-*` | `@premast/site-plugin-seo`, `@premast/site-plugin-stripe` |
 | Client sites | Any name | `acme-website`, `client-name-site` |
 
+## Critical: Ant Design Components Must Be Local
+
+Ant Design components that use `theme.useToken()` or `ConfigProvider` context **MUST live in the client project**, not in `@premast/site-core`. Symlinked packages resolve a separate copy of `antd`, creating a dual React context where theme tokens don't propagate.
+
+**Pattern:** Data and logic from packages, React UI from local components.
+
+```
+@premast/site-core  → exports siteConfig.adminSidebarItems (data)
+client project      → AdminAppLayout.jsx, AdminSidebar.jsx (local, uses data)
+```
+
+The admin shell components (`AdminAppLayout`, `AdminSidebar`) are included in `templates/starter/components/admin/` and should be copied to each client site. They import `designTokens` locally and receive `sidebarItems` from `siteConfig`.
+
+Similarly, `ThemeRootVars` lives in `theme/ThemeRootVars.jsx` in the client project, calling `getRootCssVariablesCss()` from `@premast/site-core/theme` with local tokens.
+
 ## Package Rules
 
 ### Imports in packages (site-core, site-blocks, plugins)

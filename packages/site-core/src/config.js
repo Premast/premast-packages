@@ -1,12 +1,13 @@
 import { validatePlugin } from "./plugin.js";
 import { buildPuckConfig } from "./puck/build-config.js";
 import { buildAdminSidebarItems } from "./admin/build-sidebar.js";
+import { mergeAdminTokens } from "./admin/admin-theme.js";
 import { buildApiRouteMap } from "./api/build-routes.js";
 import { registerModels } from "./db/register-models.js";
 import { createConnectDB } from "./db/mongoose.js";
 import { runCoreSeed } from "./services/seed.js";
 
-export function createSiteConfig({ blocks = {}, categories = {}, plugins = [], theme = {} }) {
+export function createSiteConfig({ blocks = {}, categories = {}, plugins = [], theme = {}, admin = {} }) {
   const validatedPlugins = plugins.map(validatePlugin);
 
   // Collect all blocks (base + plugin)
@@ -32,6 +33,8 @@ export function createSiteConfig({ blocks = {}, categories = {}, plugins = [], t
 
   const puckConfig = buildPuckConfig(allBlocks, allCategories, fieldInjections);
   const adminSidebarItems = buildAdminSidebarItems(validatedPlugins);
+  const adminTokens = mergeAdminTokens(admin.theme);
+  const adminTitle = admin.title || "CMS";
   const apiRouteHandlers = buildApiRouteMap(validatedPlugins);
   const mongooseModels = registerModels(validatedPlugins);
   const hooks = collectHooks(validatedPlugins);
@@ -43,6 +46,8 @@ export function createSiteConfig({ blocks = {}, categories = {}, plugins = [], t
   return {
     puckConfig,
     adminSidebarItems,
+    adminTokens,
+    adminTitle,
     apiRouteHandlers,
     mongooseModels,
     hooks,

@@ -4,6 +4,8 @@
   "type": "module",
   "packageManager": "pnpm@10.6.5",
   "scripts": {
-    "lint": "echo 'lint not configured yet'"
+    "lint": "echo 'lint not configured yet'",
+    "build:cli": "node scripts/build-cli.js",
+    "publish:all": "pnpm build:cli && pnpm -r publish --no-git-checks"
   }
 }

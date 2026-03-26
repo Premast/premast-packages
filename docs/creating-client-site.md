@@ -1,31 +1,80 @@
 # Creating a New Client Site
 
-Step-by-step guide for the Premast dev team to set up a new client website.
-
-## Step 1: Create the repository
+## Using the CLI (recommended)
 
 ```bash
-# Copy the starter template
-cp -r /path/to/premast-packages/templates/starter ~/projects/client-name-website
-cd ~/projects/client-name-website
-
-# Initialize git
-git init
-git add -A
-git commit -m "Initial commit from Premast starter"
+npx create-premast-site
 ```
 
-## Step 2: Configure packages
+The wizard asks for:
+1. **Project name** — used as folder name, package name, and DB name
+2. **Plugins** — select which `@premast/site-plugin-*` packages to include
 
-If packages are published to GitHub Packages, create `.npmrc`:
+Then it automatically:
+- Scaffolds the project from the starter template
+- Configures `package.json` with selected plugins
+- Generates `site.config.js` with plugin imports
+- Generates `next.config.mjs` with `transpilePackages`
+- Creates `.env.local` with project-specific DB name
+- Installs dependencies
+- Initializes git with first commit
+
+### Prerequisites
+
+Before running the CLI, your machine needs:
+
+1. **GitHub Packages access** — create `~/.npmrc`:
+   ```
+   @premast:registry=https://npm.pkg.github.com
+   //npm.pkg.github.com/:_authToken=YOUR_GITHUB_TOKEN
+   ```
+   The token needs `read:packages` scope.
+
+2. **Node.js 18+** and **pnpm** (or npm/yarn)
+
+3. **MongoDB** running locally or a MongoDB Atlas connection string
+
+### After scaffolding
+
+```bash
+cd my-client-site
+
+# Edit MongoDB connection:
+nano .env.local
+
+# Start dev server:
+pnpm dev
+```
+
+- Site: http://localhost:3000
+- Admin: http://localhost:3000/admin
+
+---
+
+## Manual Setup (alternative)
+
+If you prefer to set up manually instead of using the CLI:
+
+### 1. Copy the starter template
+
+```bash
+cp -r /path/to/premast-packages/templates/starter ~/projects/client-name-website
+cd ~/projects/client-name-website
+```
+
+### 2. Configure .npmrc
+
 ```
 @premast:registry=https://npm.pkg.github.com
 //npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
 ```
 
-Update `package.json` dependencies to use published versions:
+### 3. Update package.json
+
+Change the name and replace `workspace:*` with published versions:
 ```json
 {
+  "name": "client-name-website",
   "dependencies": {
     "@premast/site-core": "^0.1.0",
     "@premast/site-blocks": "^0.1.0"
@@ -33,64 +82,51 @@ Update `package.json` dependencies to use published versions:
 }
 ```
 
-Then install:
+### 4. Install and run
+
 ```bash
 pnpm install
-```
-
-## Step 3: Set up environment
-
-```bash
 cp .env.local.example .env.local
+# Edit .env.local with your MongoDB URI
+pnpm dev
 ```
 
-Edit `.env.local` with the client's MongoDB connection:
-```
-MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net
-MONGODB_DB_NAME=clientname_db
-```
+---
 
-## Step 4: Customize branding
+## Customization After Setup
 
 ### Design tokens (`theme/tokens.js`)
 
 Change colors, fonts to match the client brand:
 ```js
 export const designTokens = {
-  bg: "#ffffff",              // Light background
+  bg: "#ffffff",
   surface: "#f8f9fa",
   text: "#1a1a1a",
-  accent: "#0066cc",          // Client's brand color
-  // ... adjust all tokens
+  accent: "#0066cc",        // Client's brand color
+  // ...
 };
 ```
 
-### Ant Design theme (`theme/antd-theme.js`)
+### Admin theme (`site.config.js`)
 
-Mirror the tokens for the admin panel UI.
-
-## Step 5: Choose plugins
-
-Edit `site.config.js`:
+Override admin panel colors:
 ```js
-import { createSiteConfig } from "@premast/site-core";
-import { baseBlocks, baseCategories } from "@premast/site-blocks";
-import { seoPlugin } from "@premast/site-plugin-seo";
-// import { stripePlugin } from "@premast/site-plugin-stripe";
-
 export const siteConfig = createSiteConfig({
   blocks: baseBlocks,
   categories: baseCategories,
-  plugins: [
-    seoPlugin(),
-    // stripePlugin({ publishableKey: process.env.STRIPE_KEY }),
-  ],
+  plugins: [seoPlugin()],
+  admin: {
+    title: "Client Name CMS",
+    theme: {
+      accent: "#10b981",     // Green accent for admin
+      bg: "#0f172a",         // Slate background
+    },
+  },
 });
 ```
 
-## Step 6: Add client-specific blocks (optional)
-
-If the client needs custom blocks not in `@premast/site-blocks`:
+### Add client-specific Puck blocks
 
 Create `components/puck/ClientBlocks.jsx`:
 ```jsx
@@ -102,10 +138,7 @@ export const TestimonialBlock = {
   },
   defaultProps: { quote: "Great service!", author: "Client" },
   render: ({ quote, author }) => (
-    <blockquote>
-      <p>{quote}</p>
-      <cite>{author}</cite>
-    </blockquote>
+    <blockquote><p>{quote}</p><cite>{author}</cite></blockquote>
   ),
 };
 ```
@@ -115,22 +148,30 @@ Add to `site.config.js`:
 import { TestimonialBlock } from "@/components/puck/ClientBlocks";
 
 export const siteConfig = createSiteConfig({
-  blocks: {
-    ...baseBlocks,
-    TestimonialBlock,
-  },
+  blocks: { ...baseBlocks, TestimonialBlock },
   categories: {
     ...baseCategories,
-    custom: {
-      title: "Custom",
-      components: ["TestimonialBlock"],
-    },
+    custom: { title: "Custom", components: ["TestimonialBlock"] },
   },
   plugins: [seoPlugin()],
 });
 ```
 
-## Step 7: Deploy
+### Add or remove plugins
+
+```bash
+# Add a plugin
+pnpm add @premast/site-plugin-stripe
+
+# Remove a plugin
+pnpm remove @premast/site-plugin-seo
+```
+
+Then update `site.config.js` imports accordingly.
+
+---
+
+## Deployment
 
 Deploy as a standard Next.js application:
 
@@ -139,30 +180,41 @@ pnpm build
 pnpm start
 ```
 
-Works with Vercel, Railway, Docker, or any Node.js host.
+Works with **Vercel**, **Railway**, **Docker**, or any Node.js host.
 
-Set the same env vars (`MONGODB_URI`, `MONGODB_DB_NAME`) in your hosting platform.
+Set these environment variables in your hosting platform:
+- `MONGODB_URI` — MongoDB connection string
+- `MONGODB_DB_NAME` — database name
+- `GITHUB_TOKEN` — needed for npm install from GitHub Packages during build
 
-## Step 8: Ongoing updates
+### Vercel-specific
+
+In Vercel project settings:
+1. **Build Command**: `pnpm build`
+2. **Install Command**: `pnpm install`
+3. **Environment Variables**: Add `MONGODB_URI`, `MONGODB_DB_NAME`, `GITHUB_TOKEN`
+
+---
+
+## Updating Packages
 
 When the core packages are updated:
+
 ```bash
 pnpm update @premast/site-core @premast/site-blocks
 ```
 
-Test locally, then deploy. That's it — all client sites get the same fix.
+Test locally, then deploy.
 
 ---
 
-## Checklist for New Client
+## Checklist
 
-- [ ] Copy starter template
-- [ ] Set up git repo
-- [ ] Configure MongoDB connection
-- [ ] Customize design tokens (colors, fonts)
-- [ ] Update Ant Design theme
-- [ ] Choose and install plugins
+- [ ] Run `npx create-premast-site` (or copy starter manually)
+- [ ] Configure `.env.local` with MongoDB URI
+- [ ] Customize `theme/tokens.js` (colors, fonts)
+- [ ] Update `site.config.js` admin title
 - [ ] Add client-specific Puck blocks (if needed)
-- [ ] Create initial pages in admin
-- [ ] Configure deployment
+- [ ] Test locally with `pnpm dev`
+- [ ] Deploy to hosting platform
 - [ ] Set environment variables in hosting

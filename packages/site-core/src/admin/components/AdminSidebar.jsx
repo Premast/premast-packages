@@ -33,7 +33,7 @@ function buildMenuItems(sidebarItems) {
   });
 }
 
-export function AdminSidebar({ sidebarItems = [], title = "CMS", fontFamily }) {
+export function AdminSidebar({ sidebarItems = [], title = "CMS" }) {
   const pathname = usePathname();
   const { token } = theme.useToken();
   const menuItems = buildMenuItems(sidebarItems);
@@ -44,7 +44,7 @@ export function AdminSidebar({ sidebarItems = [], title = "CMS", fontFamily }) {
       collapsedWidth={64}
       theme="dark"
       width={232}
-      style={{ fontFamily: fontFamily || "inherit", borderRight: `1px solid ${token.colorBorderSecondary}` }}
+      style={{ fontFamily: token.fontFamily, borderRight: `1px solid ${token.colorBorderSecondary}` }}
     >
       <div
         style={{
@@ -64,7 +64,7 @@ export function AdminSidebar({ sidebarItems = [], title = "CMS", fontFamily }) {
         mode="inline"
         selectedKeys={[pathname]}
         defaultOpenKeys={["content-nav"]}
-        style={{ borderInlineEnd: "none", fontFamily: fontFamily || "inherit" }}
+        style={{ borderInlineEnd: "none", fontFamily: token.fontFamily }}
         items={menuItems}
       />
     </Sider>
