@@ -5,7 +5,7 @@ import pc from "picocolors";
 import { resolve, join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { existsSync, mkdirSync, cpSync, readFileSync, writeFileSync } from "fs";
-import { execSync } from "child_process";
+import { execSync, spawn } from "child_process";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -35,6 +35,20 @@ const AVAILABLE_PLUGINS = [
   //   configCall: 'stripePlugin({ publishableKey: process.env.STRIPE_KEY })',
   // },
 ];
+
+/** Run a command asynchronously so the spinner keeps animating. */
+function runCommand(cmd, args, cwd) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(cmd, args, { cwd, stdio: "pipe", shell: true });
+    let stderr = "";
+    child.stderr?.on("data", (d) => { stderr += d.toString(); });
+    child.on("close", (code) => {
+      if (code === 0) resolve();
+      else reject(new Error(stderr || `${cmd} exited with code ${code}`));
+    });
+    child.on("error", reject);
+  });
+}
 
 async function main() {
   console.log();
@@ -154,20 +168,17 @@ async function main() {
 
   // 6. Install dependencies
   const packageManager = detectPackageManager();
-  s.start(`Installing dependencies with ${packageManager}...`);
+  s.start(`Installing dependencies with ${packageManager}... ${pc.dim("(this may take a minute)")}`);
 
   try {
-    execSync(`${packageManager} install`, {
-      cwd: projectDir,
-      stdio: "pipe",
-    });
+    await runCommand(packageManager, ["install"], projectDir);
     s.stop("Dependencies installed.");
   } catch {
     s.stop(pc.yellow("Dependency install failed — run it manually after setup."));
   }
 
   // 7. Initialize git
-  s.start("Initializing git...");
+  s.start("Initializing git repository...");
   try {
     execSync("git init", { cwd: projectDir, stdio: "pipe" });
     execSync("git add -A", { cwd: projectDir, stdio: "pipe" });
@@ -175,7 +186,7 @@ async function main() {
       cwd: projectDir,
       stdio: "pipe",
     });
-    s.stop("Git initialized.");
+    s.stop("Git repository initialized.");
   } catch {
     s.stop(pc.yellow("Git init failed — initialize manually if needed."));
   }
