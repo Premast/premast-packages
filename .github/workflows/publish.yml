@@ -54,7 +54,7 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Publish create-premast-site
-        run: pnpm --filter create-premast-site publish --no-git-checks --access restricted
+      - name: Publish @premast/create-premast-site
+        run: pnpm --filter @premast/create-premast-site publish --no-git-checks --access restricted
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
