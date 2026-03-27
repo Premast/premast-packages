@@ -95,6 +95,7 @@ client-site/
 ## Documentation
 
 - **[Getting Started](docs/getting-started.md)** — Full setup guide, GitHub token, project structure
+- **[Developer Guide](docs/developer-guide.md)** — Day-to-day development: editing pages, creating blocks, using the editor
 - **[Creating Plugins](docs/creating-plugins.md)** — How to build custom plugins
 - **[Creating Client Sites](docs/creating-client-site.md)** — Manual site setup (without CLI)
 - **[Publishing](docs/publishing.md)** — How to publish packages to GitHub Packages
