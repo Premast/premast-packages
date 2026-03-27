@@ -1,14 +1,22 @@
 import { Render } from "@puckeditor/core/rsc";
 import { siteConfig } from "@/site.config";
+import { Footer } from "../../components/layout/Footer";
+import { Header } from "../../components/layout/Header";
+import styles from "../layout.module.css";
 
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-function parsePuckData(raw) {
-  if (!raw) return null;
+function parsePuckData(content) {
+  if (!content) return null;
   try {
-    const data = typeof raw === "string" ? JSON.parse(raw) : raw;
-    if (data?.content && Array.isArray(data.content)) return data;
-  } catch {}
+    const parsed = JSON.parse(content);
+    if (parsed && typeof parsed === "object" && Array.isArray(parsed.content)) {
+      return parsed;
+    }
+  } catch {
+    /* not valid Puck JSON */
+  }
   return null;
 }
 
@@ -17,35 +25,25 @@ export default async function SiteLayout({ children }) {
   let footerData = null;
 
   try {
-    const { Global } = siteConfig.mongooseModels;
-    await siteConfig.connectDB();
+    const connectDB = await siteConfig.getConnectDB();
+    await connectDB();
+    const models = await siteConfig.getModels();
+    const { Global } = models;
     const [headerDoc, footerDoc] = await Promise.all([
       Global.findOne({ key: "header", published: true }).lean(),
       Global.findOne({ key: "footer", published: true }).lean(),
     ]);
     headerData = parsePuckData(headerDoc?.content);
     footerData = parsePuckData(footerDoc?.content);
-  } catch (err) {
-    console.error("[site-layout] Failed to load globals:", err.message);
+  } catch {
+    /* DB offline — fallback to static components */
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
-      {headerData ? (
-        <Render config={siteConfig.puckConfig} data={headerData} />
-      ) : (
-        <header style={{ padding: "1rem", borderBottom: "1px solid var(--theme-border)" }}>
-          Site Header
-        </header>
-      )}
-      <main style={{ flex: 1 }}>{children}</main>
-      {footerData ? (
-        <Render config={siteConfig.puckConfig} data={footerData} />
-      ) : (
-        <footer style={{ padding: "1rem", borderTop: "1px solid var(--theme-border)" }}>
-          Site Footer
-        </footer>
-      )}
+    <div className={styles.shell}>
+      {headerData ? <Render config={siteConfig.puckConfig} data={headerData} /> : <Header />}
+      <main className={styles.main}>{children}</main>
+      {footerData ? <Render config={siteConfig.puckConfig} data={footerData} /> : <Footer />}
     </div>
   );
 }

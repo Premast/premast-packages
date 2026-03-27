@@ -1,0 +1,198 @@
+/**
+ * Puck editor UI — maps @puckeditor/core CSS variables to PMST design tokens
+ * (`--theme-*` from theme/tokens.js via ThemeRootVars).
+ *
+ * Import after `@puckeditor/core/puck.css`. Scope with `.puck-theme` on the
+ * editor wrapper (see AdminPageEditor).
+ *
+ * Puck overloads `--puck-color-white` / `--puck-color-black` (light surfaces vs
+ * text vs modal scrims). We set variables for toolbar/foreground usage, then
+ * override panel + form surfaces below so the editor matches the dark admin UI.
+ */
+
+.puck-theme,
+.puck-theme * {
+  box-sizing: border-box;
+}
+
+.puck-theme,
+.puck-theme [data-puck-entry] {
+  --puck-font-family: var(--theme-font-sans);
+  --puck-font-family-monospaced: ui-monospace, "Cascadia Code", "Source Code Pro",
+    Menlo, Consolas, monospace;
+
+  /*
+   * Grey scale — map by Puck’s *usage* (labels, borders, chrome), not numeric order.
+   * See @puckeditor/core/dist/index.css (Nav, ActionBar, Layout, inputs).
+   */
+  --puck-color-grey-01: var(--theme-bg);
+  --puck-color-grey-02: var(--theme-bg-subtle);
+  --puck-color-grey-03: var(--theme-text-muted);
+  --puck-color-grey-04: var(--theme-text-muted);
+  --puck-color-grey-05: var(--theme-border-strong);
+  --puck-color-grey-06: var(--theme-text-tertiary);
+  --puck-color-grey-07: var(--theme-text-tertiary);
+  --puck-color-grey-08: var(--theme-text);
+  --puck-color-grey-09: var(--theme-border);
+  --puck-color-grey-10: var(--theme-fill);
+  --puck-color-grey-11: var(--theme-bg-subtle);
+  --puck-color-grey-12: var(--theme-surface);
+
+  /* Primary — accent; darker steps for hovers / breadcrumb */
+  --puck-color-azure-01: color-mix(in srgb, var(--theme-accent) 55%, #000);
+  --puck-color-azure-02: color-mix(in srgb, var(--theme-accent) 70%, #000);
+  --puck-color-azure-03: color-mix(in srgb, var(--theme-accent) 82%, #000);
+  --puck-color-azure-04: var(--theme-accent);
+  --puck-color-azure-05: var(--theme-accent);
+  --puck-color-azure-06: var(--theme-accent);
+  --puck-color-azure-07: var(--theme-accent);
+  --puck-color-azure-08: var(--theme-accent-muted);
+  --puck-color-azure-09: var(--theme-accent-muted);
+  --puck-color-azure-10: var(--theme-fill);
+  --puck-color-azure-11: var(--theme-bg-subtle);
+  --puck-color-azure-12: var(--theme-surface-raised);
+
+  /* fg on dark toolbars / primary buttons (Puck uses “white” for both) */
+  --puck-color-white: var(--theme-text);
+  /* scrims, color-mix backdrops — must stay dark */
+  --puck-color-black: var(--theme-bg);
+
+  --puck-color-rose-07: var(--theme-accent);
+
+  --puck-color-red-05: #f87171;
+  --puck-color-red-06: #fca5a5;
+  --puck-color-green-05: #4ade80;
+  --puck-color-green-06: #86efac;
+  --puck-color-rose-05: #fb7185;
+  --puck-color-yellow-05: #facc15;
+
+  color: var(--theme-text);
+}
+
+.puck-theme .Puck {
+  background: var(--theme-surface);
+  color: var(--theme-text);
+}
+
+/* Surfaces that Puck styles with --puck-color-white (paper UI) */
+.puck-theme [class*="PuckHeader"],
+.puck-theme [class*="MenuBar"],
+.puck-theme [class*="Sidebar--right"],
+.puck-theme [class*="SidebarSection-title"],
+.puck-theme [class*="SidebarSection-loadingOverlay"],
+.puck-theme [class*="Modal-inner"],
+.puck-theme [class*="ExternalInputModal-searchInput"] {
+  background: var(--theme-surface-raised);
+  color: var(--theme-text);
+}
+
+.puck-theme [class*="PuckHeader"] {
+  border-bottom-color: var(--theme-border);
+}
+
+.puck-theme [class*="PuckHeader-rightSideBarToggle"],
+.puck-theme [class*="PuckHeader-leftSideBarToggle"],
+.puck-theme [class*="PuckHeader-menuButton"] {
+  color: var(--theme-text-muted);
+}
+
+.puck-theme [class*="SidebarSection"] {
+  color: var(--theme-text);
+}
+
+.puck-theme [class*="Heading"] {
+  color: var(--theme-text);
+}
+
+/* Primary / default Puck buttons: text on filled accent */
+.puck-theme [class*="Button--primary"] {
+  color: var(--theme-accent-on-accent);
+}
+
+.puck-theme [class*="Button--secondary"]:hover,
+.puck-theme [class*="Button--secondary"]:active {
+  color: var(--theme-text);
+}
+
+/* Form fields */
+.puck-theme input[class*="Input-input"],
+.puck-theme textarea[class*="Input-input"],
+.puck-theme select[class*="Input-input"] {
+  background: var(--theme-surface-raised);
+  color: var(--theme-text);
+  border-color: var(--theme-border);
+}
+
+.puck-theme [class*="Input--readOnly"] [class*="Input-input"] {
+  background: var(--theme-bg-subtle);
+  color: var(--theme-text-muted);
+}
+
+/* Block drawer cards (default white card) */
+.puck-theme [class*="DrawerItem-draggable"] {
+  background: var(--theme-surface-raised);
+  color: var(--theme-text);
+}
+
+/* Hardcoded `white` in Puck (not using CSS variables) */
+.puck-theme [class*="PuckCanvas-root"],
+.puck-theme [class*="FieldsPlugin"],
+.puck-theme [class*="Select-items"] {
+  background: var(--theme-surface) !important;
+  color: var(--theme-text);
+}
+
+.puck-theme [class*="SelectItem"] {
+  color: var(--theme-text);
+}
+
+/* Array field — Puck “white” panels (avoid touching expanded summary; Puck uses higher specificity) */
+.puck-theme [class*="ArrayFieldItem-body"] {
+  background: var(--theme-bg-subtle);
+  color: var(--theme-text);
+}
+
+.puck-theme [class*="ArrayField-addButton"] {
+  background: var(--theme-surface-raised);
+}
+
+.puck-theme nav,
+.puck-theme aside,
+.puck-theme header,
+.puck-theme button,
+.puck-theme input,
+.puck-theme textarea,
+.puck-theme select {
+  font-family: var(--theme-font-sans);
+}
+
+.puck-theme [class*="ActionBar"],
+.puck-theme [class*="Drawer"],
+.puck-theme [class*="SideBar"],
+.puck-theme [class*="ComponentList"],
+.puck-theme [class*="FieldLabel"],
+.puck-theme [class*="Panel"] {
+  letter-spacing: 0.01em;
+}
+
+.puck-theme [class*="ActionBar"],
+.puck-theme [class*="Drawer"],
+.puck-theme [class*="SideBar"] {
+  border-radius: 0 !important;
+}
+
+.puck-theme [class*="ActionBar"] {
+  box-shadow: 4px 4px 0 var(--theme-shadow-offset);
+}
+
+
+/* Ensure custom Puck fields (e.g. BlockNote rich text) get full width */
+.puck-theme [class*="PuckFields-field"],
+.puck-theme [class*="InputWrapper"] {
+  width: 100%;
+}
+
+/* Rich text (body) field — extra inset in the Puck sidebar (browser-tuned) */
+.puck-theme [class*="PuckFields-field"]:has([data-puck-rich-text-field]) {
+  padding-left: 50px;
+}

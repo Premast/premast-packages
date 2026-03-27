@@ -1,0 +1,6 @@
+.editorShell {
+  border: 1px solid var(--theme-border-strong);
+  background: var(--theme-surface);
+  box-shadow: 4px 4px 0 var(--theme-shadow-offset);
+  overflow: hidden;
+}

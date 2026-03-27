@@ -1,0 +1,109 @@
+.header {
+  border: 1px solid var(--theme-border-strong);
+  background: var(--theme-surface);
+  box-shadow: 4px 4px 0 var(--theme-shadow-offset);
+  padding: 0.9rem 1rem 1rem;
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  color: var(--theme-text-muted);
+  text-decoration: none;
+}
+
+.backLink:hover {
+  color: var(--theme-text);
+}
+
+.headerTitle {
+  margin: 0;
+  font-size: 1.5rem;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  color: var(--theme-text);
+}
+
+.headerMeta {
+  margin-top: 0.35rem;
+  color: var(--theme-text-muted);
+}
+
+.note {
+  border: 1px dashed var(--theme-border-dashed);
+  background:
+    repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 6px,
+      var(--theme-placeholder-stripe) 6px,
+      var(--theme-placeholder-stripe) 7px
+    ),
+    var(--theme-bg-subtle);
+  padding: 0.85rem 1rem;
+}
+
+.noteLabel {
+  margin-bottom: 0.45rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--theme-text-muted);
+}
+
+.noteBody {
+  margin: 0;
+  color: var(--theme-text);
+}
+
+/* Shell border matches admin wireframe; Puck theming lives in theme/puck.css */
+.editorShell {
+  border: 1px solid var(--theme-border-strong);
+  background: var(--theme-surface);
+  box-shadow: 4px 4px 0 var(--theme-shadow-offset);
+  overflow: hidden;
+}
+
+.headingBlock {
+  margin: 0;
+  font-size: 2rem;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  color: var(--theme-text);
+}
+
+.textBlock {
+  margin: 0;
+  color: var(--theme-text-muted);
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.spacerBlock {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 8px;
+  border: 1px dashed var(--theme-border-dashed);
+  background:
+    repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 6px,
+      var(--theme-placeholder-stripe) 6px,
+      var(--theme-placeholder-stripe) 7px
+    ),
+    var(--theme-bg-subtle);
+  color: var(--theme-text-muted);
+}
+
+.spacerBlock span {
+  padding: 0 10px;
+  font-size: 0.65rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}

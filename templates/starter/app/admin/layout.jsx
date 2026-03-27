@@ -1,14 +1,8 @@
-import { AdminAppLayout } from "@premast/site-core/admin";
-import { siteConfig } from "@/site.config";
+export const metadata = {
+  title: "Admin | PMST",
+  description: "PMST content management",
+};
 
-export default function AdminLayout({ children }) {
-  return (
-    <AdminAppLayout
-      sidebarItems={siteConfig.adminSidebarItems}
-      adminTokens={siteConfig.adminTokens}
-      title={siteConfig.adminTitle}
-    >
-      {children}
-    </AdminAppLayout>
-  );
+export default function AdminRootLayout({ children }) {
+  return children;
 }

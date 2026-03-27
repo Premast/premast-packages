@@ -1,4 +1,4 @@
-import { matchRoute } from "@premast/site-core";
+import { matchRoute } from "@premast/site-core/api";
 import { siteConfig } from "@/site.config";
 
 export const runtime = "nodejs";
