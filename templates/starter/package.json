@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "next dev --webpack",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "update": "npx @premast/create-premast-site --update"
   },
   "dependencies": {
     "@premast/site-core": "workspace:*",
