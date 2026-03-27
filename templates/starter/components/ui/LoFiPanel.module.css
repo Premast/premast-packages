@@ -1,0 +1,21 @@
+.root {
+  border: 1px solid var(--theme-border-strong);
+  background: var(--theme-surface);
+  box-shadow: 4px 4px 0 var(--theme-shadow-offset);
+}
+
+.title {
+  margin: 0;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  border-bottom: 1px dashed var(--theme-border-dashed);
+  background: var(--theme-bg-subtle);
+  color: var(--theme-text-muted);
+}
+
+.content {
+  padding: 0.85rem 0.75rem 1rem;
+}
