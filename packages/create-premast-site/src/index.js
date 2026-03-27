@@ -272,12 +272,32 @@ function generateNextConfig(selectedPlugins) {
     ...selectedPlugins.map((pl) => `    "${pl.value}",`),
   ];
 
-  return `/** @type {import('next').NextConfig} */
+  return `import { resolve, dirname } from "path";
+import { createRequire } from "module";
+
+const require = createRequire(import.meta.url);
+
+// Alias antd so @premast packages share the client's single copy.
+// Do NOT alias react/react-dom — breaks Next.js edge middleware.
+const sharedDeps = ["antd", "@ant-design/icons"];
+const webpackAliases = Object.fromEntries(
+  sharedDeps.map((dep) => [
+    dep,
+    resolve(dirname(require.resolve(\`\${dep}/package.json\`))),
+  ])
+);
+
+/** @type {import('next').NextConfig} */
 const nextConfig = {
   serverExternalPackages: ["mongoose"],
   transpilePackages: [
 ${packages.join("\n")}
   ],
+  turbopack: {},
+  webpack(config) {
+    Object.assign(config.resolve.alias, webpackAliases);
+    return config;
+  },
 };
 
 export default nextConfig;

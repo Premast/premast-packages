@@ -11,7 +11,9 @@ const require = createRequire(import.meta.url);
  * When packages are installed from npm (production), this is harmless.
  * For local dev with file: links, use `next dev --webpack`.
  */
-const sharedDeps = ["react", "react-dom", "antd", "@ant-design/icons"];
+// Only alias antd — react/react-dom resolve correctly from npm
+// and aliasing them breaks Next.js edge middleware runtime.
+const sharedDeps = ["antd", "@ant-design/icons"];
 const webpackAliases = Object.fromEntries(
   sharedDeps.map((dep) => [
     dep,
