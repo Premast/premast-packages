@@ -168,6 +168,17 @@ async function main() {
     writeFileSync(envPath, envContent);
   }
 
+  // 5b. Write .premast.json metadata (used by premast-update)
+  const premastMeta = {
+    templateVersion: pkg.dependencies["@premast/site-core"]?.replace(/^\^/, "") || "0.1.0",
+    createdAt: new Date().toISOString(),
+    lastUpdate: null,
+  };
+  writeFileSync(
+    join(projectDir, ".premast.json"),
+    JSON.stringify(premastMeta, null, 2) + "\n",
+  );
+
   s.stop("Project configured.");
 
   // 6. Install dependencies
@@ -212,6 +223,9 @@ async function main() {
       "",
       "# Create your first admin account at:",
       "# http://localhost:3000/admin/setup",
+      "",
+      "# To update Premast packages later:",
+      "npx premast-update",
     ].join("\n"),
     "Next steps",
   );

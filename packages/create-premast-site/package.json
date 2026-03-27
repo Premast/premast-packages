@@ -4,7 +4,8 @@
   "description": "Scaffold a new Premast site with plugins",
   "type": "module",
   "bin": {
-    "create-premast-site": "./src/index.js"
+    "create-premast-site": "./src/index.js",
+    "premast-update": "./src/update.js"
   },
   "files": [
     "src",
