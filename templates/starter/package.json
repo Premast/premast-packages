@@ -7,7 +7,7 @@
     "dev": "next dev --webpack",
     "build": "next build",
     "start": "next start",
-    "update": "npx @premast/create-premast-site --update"
+    "update": "premast-update"
   },
   "dependencies": {
     "@premast/site-core": "workspace:*",
@@ -25,6 +25,7 @@
     "react-dom": "19.2.4"
   },
   "devDependencies": {
+    "@premast/create-premast-site": "workspace:*",
     "eslint": "^9",
     "eslint-config-next": "16.2.1"
   }
