@@ -6,13 +6,17 @@ A hands-on guide for junior developers working on Premast client sites. Covers e
 
 - [Understanding the Admin Panel](#understanding-the-admin-panel)
 - [Pages vs Content Types vs Content Items](#pages-vs-content-types-vs-content-items)
+- [How-To Recipes](#how-to-recipes)
+  - [Create a Static Page](#recipe-create-a-static-page)
+  - [Create a New Content Type](#recipe-create-a-new-content-type)
+  - [Create a New Header Design](#recipe-create-a-new-header-design)
+  - [Create a New Footer Design](#recipe-create-a-new-footer-design)
+  - [Build a Landing Page](#recipe-build-a-landing-page)
+  - [Add a Blog to the Site](#recipe-add-a-blog-to-the-site)
 - [Editing Pages with Puck Editor](#editing-pages-with-puck-editor)
-- [Creating Content Types (Templates)](#creating-content-types-templates)
-- [Creating Content Items](#creating-content-items)
-- [Global Elements (Header & Footer)](#global-elements-header--footer)
-- [Customizing the Theme](#customizing-the-theme)
 - [Creating Custom Puck Blocks](#creating-custom-puck-blocks)
 - [Adding a Block to the Editor](#adding-a-block-to-the-editor)
+- [Customizing the Theme](#customizing-the-theme)
 - [Working with the SEO Plugin](#working-with-the-seo-plugin)
 - [API Routes](#api-routes)
 - [Common Patterns](#common-patterns)
@@ -63,6 +67,387 @@ Pages:
   About Us             → /about-us
   Contact              → /contact
 ```
+
+---
+
+## How-To Recipes
+
+Real-world step-by-step workflows for common client requests.
+
+---
+
+### Recipe: Create a Static Page
+
+> **Client says:** "We need an About Us page with our story and team photos."
+
+**Step 1 — Create the page in admin**
+
+1. Go to **Admin → Pages**
+2. Click **+ New page**
+3. Enter:
+   - Title: `About Us`
+   - Slug: `about-us` (auto-generated from title)
+4. Click Create, then **Edit** to open the Puck editor
+
+**Step 2 — Build the layout**
+
+1. From the **Blocks** panel (left nav), drag blocks onto the canvas:
+   - **Hero Block** — for a banner image + headline
+   - **Text Block** — for the company story
+   - **Columns Block** — for team member cards
+   - **Spacer Block** — for spacing between sections
+2. Click each block to edit its content in the right panel
+
+**Step 3 — Configure SEO**
+
+1. Scroll to the top of the right panel to find **Root Fields**
+2. Fill in:
+   - Meta Title: "About Us — Company Name"
+   - Meta Description: "Learn about our story, mission, and team."
+   - Focus Keyword: "about us"
+
+**Step 4 — Publish**
+
+1. Click **Publish** in the top-right
+2. Visit `/about-us` on the live site to verify
+
+---
+
+### Recipe: Create a New Content Type
+
+> **Client says:** "We need a Services section. Each service should have its own page with a description, features list, and pricing."
+
+**Step 1 — Create the content type**
+
+1. Go to **Admin → Templates**
+2. Click **+ New template**
+3. Fill in:
+   - Name: `Service`
+   - Slug: `service` (auto-generated)
+   - URL Prefix: `/services`
+4. Click Create
+
+**Step 2 — Design the template layout**
+
+1. Click **Edit** on the new "Service" template
+2. The Puck editor opens with a blank canvas
+3. Build the default layout that every service page will start with:
+   - **Hero Block** — service name + hero image
+   - **Text Block** — service description
+   - **Columns Block** — feature highlights (2 or 3 columns)
+   - **Text Block** — pricing or CTA section
+4. Click **Publish** to save the template
+
+**Step 3 — Create service pages**
+
+1. Go to **Admin → Content → Service** (appears in sidebar automatically)
+2. Click **+ New content**
+3. Fill in:
+   - Title: `Web Design`
+   - Slug: `web-design` (auto-generated)
+4. Click Create, then **Edit**
+5. The Puck editor opens with the template layout pre-filled
+6. Customize the content for this specific service
+7. Click **Publish**
+
+**Step 4 — Verify**
+
+- Visit `/services/web-design` on the live site
+- The page renders with your customized content
+
+**Step 5 — Repeat for each service**
+
+Create more content items: "SEO Optimization" → `/services/seo-optimization`, "Mobile Apps" → `/services/mobile-apps`, etc.
+
+> **Tip:** If you want to list all services on a `/services` page, create a standalone **Page** with slug `services` and add a custom block that fetches and displays all service content items.
+
+---
+
+### Recipe: Create a New Header Design
+
+> **Client says:** "We want a new header with their logo, navigation links, and a CTA button."
+
+**Option A — Using the Puck Editor (no code)**
+
+1. Go to **Admin → Global**
+2. Click **Edit** on **Header**
+3. The Puck editor opens
+4. Build the header using available blocks:
+   - Use **Columns Block** for layout (logo left, nav right)
+   - Use **Text Block** for the site name
+   - Or build with any combination of blocks
+5. Click **Publish**
+6. Every page on the site now uses this header
+
+**Option B — Custom Code (for complex headers)**
+
+If you need dropdowns, sticky behavior, or interactive elements that blocks can't handle:
+
+1. Edit `components/layout/Header.jsx` in the client project:
+
+```jsx
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import styles from "./Header.module.css";
+
+export default function Header() {
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  return (
+    <header className={styles.header}>
+      <div className={styles.container}>
+        {/* Logo */}
+        <Link href="/" className={styles.logo}>
+          <img src="/logo.svg" alt="Company Name" />
+        </Link>
+
+        {/* Navigation */}
+        <nav className={styles.nav}>
+          <Link href="/about">About</Link>
+          <Link href="/services">Services</Link>
+          <Link href="/blog">Blog</Link>
+          <Link href="/contact" className={styles.cta}>
+            Contact Us
+          </Link>
+        </nav>
+
+        {/* Mobile menu toggle */}
+        <button
+          className={styles.menuToggle}
+          onClick={() => setMenuOpen(!menuOpen)}
+        >
+          ☰
+        </button>
+      </div>
+    </header>
+  );
+}
+```
+
+2. Create `components/layout/Header.module.css`:
+
+```css
+.header {
+  background: var(--theme-surface);
+  border-bottom: 1px solid var(--theme-border);
+  padding: 0 2rem;
+  height: 64px;
+  display: flex;
+  align-items: center;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nav {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.nav a {
+  color: var(--theme-text-muted);
+  text-decoration: none;
+}
+
+.nav a:hover {
+  color: var(--theme-text);
+}
+
+.cta {
+  background: var(--theme-accent);
+  color: var(--theme-accent-on-accent);
+  padding: 0.5rem 1.25rem;
+  border-radius: 4px;
+}
+```
+
+3. The header renders on every page because `app/(site)/layout.jsx` imports it
+
+> **When to use which?** Use Option A (Puck editor) if the client wants to edit the header themselves without developer help. Use Option B (code) if the header needs complex interactions, animations, or responsive behavior.
+
+---
+
+### Recipe: Create a New Footer Design
+
+> **Client says:** "We need a footer with 4 columns: About, Services, Resources, Contact info."
+
+**Option A — Using the Puck Editor**
+
+Same as the header — go to **Admin → Global → Footer → Edit** and build with blocks.
+
+**Option B — Custom Code**
+
+Edit `components/layout/Footer.jsx`:
+
+```jsx
+import Link from "next/link";
+import styles from "./Footer.module.css";
+
+export default function Footer() {
+  return (
+    <footer className={styles.footer}>
+      <div className={styles.grid}>
+        {/* Column 1 — About */}
+        <div>
+          <h4 className={styles.heading}>About</h4>
+          <p className={styles.text}>
+            We build digital products that make a difference.
+          </p>
+        </div>
+
+        {/* Column 2 — Services */}
+        <div>
+          <h4 className={styles.heading}>Services</h4>
+          <nav className={styles.links}>
+            <Link href="/services/web-design">Web Design</Link>
+            <Link href="/services/development">Development</Link>
+            <Link href="/services/seo">SEO</Link>
+          </nav>
+        </div>
+
+        {/* Column 3 — Resources */}
+        <div>
+          <h4 className={styles.heading}>Resources</h4>
+          <nav className={styles.links}>
+            <Link href="/blog">Blog</Link>
+            <Link href="/case-studies">Case Studies</Link>
+            <Link href="/faq">FAQ</Link>
+          </nav>
+        </div>
+
+        {/* Column 4 — Contact */}
+        <div>
+          <h4 className={styles.heading}>Contact</h4>
+          <p className={styles.text}>hello@company.com</p>
+          <p className={styles.text}>+1 (555) 123-4567</p>
+        </div>
+      </div>
+
+      <div className={styles.bottom}>
+        <p>© {new Date().getFullYear()} Company Name. All rights reserved.</p>
+      </div>
+    </footer>
+  );
+}
+```
+
+---
+
+### Recipe: Build a Landing Page
+
+> **Client says:** "We need a marketing landing page for our new product launch."
+
+**Step 1 — Create a new page**
+
+1. Go to **Admin → Pages → + New page**
+2. Title: `Product Launch`, Slug: `product-launch`
+
+**Step 2 — Build with blocks**
+
+Drag these blocks in order to create a typical landing page:
+
+| Order | Block | Purpose |
+|-------|-------|---------|
+| 1 | **Hero Block** | Big headline + subtitle + CTA button |
+| 2 | **Spacer Block** | Breathing room (40px) |
+| 3 | **Columns Block** (3 cols) | Feature highlights with icons |
+| 4 | **Spacer Block** | Breathing room (60px) |
+| 5 | **Text Block** | Detailed product description |
+| 6 | **Columns Block** (2 cols) | Testimonials or social proof |
+| 7 | **Spacer Block** | Breathing room (40px) |
+| 8 | **Hero Block** | Final CTA section |
+
+**Step 3 — Edit each block**
+
+Click each block and customize its content in the right panel (text, images, colors).
+
+**Step 4 — SEO**
+
+Fill in Root Fields: Meta Title, Description, Focus Keyword.
+
+**Step 5 — Publish & share**
+
+Click Publish. The page is live at `/product-launch`.
+
+> **Need custom blocks?** If the available blocks don't cover the design (e.g., pricing table, FAQ accordion, video embed), create a [custom Puck block](#creating-custom-puck-blocks) first, then use it in the page.
+
+---
+
+### Recipe: Add a Blog to the Site
+
+> **Client says:** "We want a blog section with articles."
+
+**Step 1 — Create the Blog Article content type**
+
+1. **Admin → Templates → + New template**
+2. Name: `Blog Article`, Slug: `blog-article`, URL Prefix: `/blog`
+3. Click **Edit** and build the template layout:
+   - **Hero Block** — article title + featured image
+   - **Text Block** — article body content
+   - **Spacer Block** — spacing before author info
+   - **Text Block** — author bio / call to action
+4. Click **Publish**
+
+**Step 2 — Write articles**
+
+1. **Admin → Content → Blog Article → + New content**
+2. Title: "How to Get Started", Slug: `how-to-get-started`
+3. Edit in Puck, customize the content, Publish
+4. Live at: `/blog/how-to-get-started`
+
+**Step 3 — Create a blog listing page (optional)**
+
+If you want a `/blog` page that lists all articles:
+
+1. Create a custom block `BlogListBlock` that fetches articles from the API:
+
+```jsx
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+
+export const BlogListBlock = {
+  label: "Blog List",
+  fields: {
+    limit: { type: "number", label: "Max articles", min: 1, max: 50 },
+  },
+  defaultProps: { limit: 10 },
+  render: ({ limit }) => <BlogList limit={limit} />,
+};
+
+function BlogList({ limit }) {
+  const [articles, setArticles] = useState([]);
+
+  useEffect(() => {
+    fetch(`/api/content-items?contentType=blog-article&published=true`)
+      .then((r) => r.json())
+      .then((json) => setArticles((json.data || []).slice(0, limit)));
+  }, [limit]);
+
+  return (
+    <div style={{ display: "grid", gap: "1.5rem" }}>
+      {articles.map((article) => (
+        <Link key={article._id} href={`/blog/${article.slug}`}>
+          <h3>{article.title}</h3>
+        </Link>
+      ))}
+    </div>
+  );
+}
+```
+
+2. Register it in `site.config.js` and `puck.config.js`
+3. Create a standalone **Page** with slug `blog` and drop the `BlogListBlock` on it
 
 ---
 
