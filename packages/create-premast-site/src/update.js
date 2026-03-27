@@ -36,11 +36,11 @@ const CLIENT_ONLY_FILES = new Set([
   "package-lock.json",
   "pnpm-lock.yaml",
   "yarn.lock",
-  "next.config.mjs",
 ]);
 
 // Files that should be compared and optionally updated
 const MANAGED_FILES = [
+  "next.config.mjs",
   "middleware.js",
   "jsconfig.json",
   "app/layout.jsx",
@@ -296,15 +296,26 @@ async function main() {
     if (filesToUpdate.length > 0) {
       p.log.info(`\n${pc.yellow(`${filesToUpdate.length} file(s)`)} differ from template:`);
 
+      // Files that contain client-specific config — warn before replacing
+      const CAUTION_FILES = new Set(["next.config.mjs", "app/layout.jsx", "app/(site)/layout.jsx"]);
+
       for (const { filePath, currentContent, newContent } of filesToUpdate) {
         console.log();
         p.log.info(pc.bold(filePath));
+
+        if (CAUTION_FILES.has(filePath)) {
+          console.log(pc.yellow(`  ⚠ This file may contain client-specific changes (e.g. plugins, custom config).`));
+          console.log(pc.yellow(`    Review the diff carefully before replacing.`));
+        }
+
         showDiff(currentContent, newContent, filePath);
+
+        const defaultSkip = CAUTION_FILES.has(filePath);
 
         const action = await p.select({
           message: `What to do with ${filePath}?`,
           options: [
-            { value: "skip", label: "Skip", hint: "keep your current version" },
+            { value: "skip", label: `Skip${defaultSkip ? " (recommended)" : ""}`, hint: "keep your current version" },
             { value: "replace", label: "Replace", hint: "use the new template version" },
             { value: "backup", label: "Backup & Replace", hint: "save .bak, then replace" },
           ],
