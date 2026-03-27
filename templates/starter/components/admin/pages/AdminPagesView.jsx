@@ -294,7 +294,18 @@ export function AdminPagesView() {
             label="Title"
             rules={[{ required: true, message: "Required" }]}
           >
-            <Input placeholder="Page title" />
+            <Input
+              placeholder="Page title"
+              onChange={(e) => {
+                const slug = e.target.value
+                  .toLowerCase()
+                  .trim()
+                  .replace(/[^a-z0-9\s-]/g, "")
+                  .replace(/\s+/g, "-")
+                  .replace(/-+/g, "-");
+                form.setFieldValue("slug", slug);
+              }}
+            />
           </Form.Item>
           <Form.Item
             name="slug"
