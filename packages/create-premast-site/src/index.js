@@ -294,7 +294,12 @@ function detectPackageManager() {
   return "npm";
 }
 
-main().catch((err) => {
-  console.error(pc.red("Error:"), err.message);
-  process.exit(1);
-});
+// If --update flag is passed, run the update flow instead
+if (process.argv.includes("--update")) {
+  import("./update.js");
+} else {
+  main().catch((err) => {
+    console.error(pc.red("Error:"), err.message);
+    process.exit(1);
+  });
+}
