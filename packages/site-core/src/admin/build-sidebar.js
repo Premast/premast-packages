@@ -9,7 +9,8 @@ const CORE_SIDEBAR_ITEMS = [
     label: "Content",
     children: [{ key: "/admin/content", label: "All content", path: "/admin/content" }],
   },
-  { key: "/admin/settings", icon: "SettingOutlined", label: "Settings", path: "/admin/settings" },
+  { key: "/admin/settings", icon: "SettingOutlined", label: "Settings", path: "/admin/settings", requiredRole: "super_admin" },
+  { key: "/admin/users", icon: "TeamOutlined", label: "Users", path: "/admin/users", requiredRole: "super_admin" },
 ];
 
 export function buildAdminSidebarItems(plugins) {

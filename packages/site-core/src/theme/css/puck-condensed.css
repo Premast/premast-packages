@@ -1,0 +1,179 @@
+/**
+ * Condensed Puck editor UI — tighter spacing for a denser, professional feel.
+ *
+ * Import AFTER `@puckeditor/core/puck.css` and your theme's `puck.css`.
+ * Scope with `.puck-theme` on the editor wrapper.
+ *
+ * Usage in client site:
+ *   import "@premast/site-core/theme/css/puck-condensed.css";
+ */
+
+/* Header — minimal */
+.puck-theme [class*="PuckHeader"] {
+  padding: 4px 8px;
+  min-height: 0;
+  border-bottom-width: 1px;
+}
+
+.puck-theme [class*="PuckHeader-inner"] {
+  gap: 4px;
+}
+
+.puck-theme [class*="PuckHeader-title"] [class*="Heading"] {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.puck-theme [class*="PuckHeader"] [class*="IconButton"] {
+  padding: 4px;
+}
+
+.puck-theme [class*="PuckHeader"] [class*="IconButton"] svg {
+  width: 16px;
+  height: 16px;
+}
+
+.puck-theme [class*="PuckHeader"] [class*="Button--primary"] {
+  padding: 4px 12px;
+  font-size: 12px;
+  min-height: 0;
+}
+
+.puck-theme [class*="MenuBar"] {
+  padding: 0;
+  min-height: 0;
+}
+
+.puck-theme [class*="MenuBar-inner"] {
+  gap: 2px;
+}
+
+/* Sidebar sections — tighter */
+.puck-theme [class*="SidebarSection-content"] {
+  padding: 8px 12px;
+}
+
+.puck-theme [class*="SidebarSection-title"] {
+  padding: 8px 12px;
+  min-height: 0;
+}
+
+/* Field labels — compact */
+.puck-theme [class*="FieldLabel-label"] {
+  font-size: 11px;
+  padding-bottom: 4px;
+  margin-bottom: 0;
+}
+
+.puck-theme [class*="FieldLabel-iconWrap"] {
+  width: 14px;
+  height: 14px;
+}
+
+.puck-theme [class*="FieldLabel-iconWrap"] svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* Field wrapper gaps */
+.puck-theme [class*="PuckFields"] {
+  gap: 2px;
+}
+
+.puck-theme [class*="PuckFields-field"] {
+  padding: 6px 12px;
+}
+
+/* Input fields — smaller */
+.puck-theme input[class*="Input-input"],
+.puck-theme select[class*="Input-input"] {
+  padding: 5px 8px;
+  font-size: 13px;
+}
+
+.puck-theme textarea[class*="Input-input"] {
+  padding: 5px 8px;
+  font-size: 13px;
+  min-height: 56px;
+}
+
+/* Sidebar section heading text */
+.puck-theme [class*="Heading--s"],
+.puck-theme [class*="Heading--xs"] {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Block drawer items — tighter */
+.puck-theme [class*="DrawerItem"] {
+  margin-bottom: 2px;
+}
+
+.puck-theme [class*="DrawerItem-draggable"] {
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+/* Component list — compact */
+.puck-theme [class*="ComponentList-item"] {
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+/* Array field items — tighter */
+.puck-theme [class*="ArrayFieldItem-summary"] {
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+/* Action bar buttons — smaller */
+.puck-theme [class*="ActionBar-action"] {
+  padding: 4px;
+}
+
+/* Sidebar tab buttons — compact */
+.puck-theme [class*="SideBar"] [class*="SidebarSection"] {
+  font-size: 12px;
+}
+
+/* Select dropdown — compact */
+.puck-theme [class*="Select-items"] {
+  font-size: 13px;
+}
+
+.puck-theme [class*="SelectItem"] {
+  padding: 4px 8px;
+}
+
+/* Breadcrumbs — tighter */
+.puck-theme [class*="Breadcrumbs"] {
+  font-size: 11px;
+  padding: 4px 0;
+}
+
+/* Right sidebar scroll area */
+.puck-theme [class*="Sidebar--right"] {
+  font-size: 12px;
+}
+
+/* Left nav (Blocks / Outline) — narrower with smaller icons */
+.puck-theme [class*="PuckLayout-nav"] {
+  width: 54px;
+}
+
+.puck-theme [class*="NavItem-link"] {
+  padding: 6px 4px;
+  gap: 2px;
+}
+
+.puck-theme [class*="NavItem-linkIcon"] svg {
+  width: 16px;
+  height: 16px;
+}
+
+.puck-theme [class*="NavItem-link"] > span:not([class]) {
+  font-size: 9px;
+}

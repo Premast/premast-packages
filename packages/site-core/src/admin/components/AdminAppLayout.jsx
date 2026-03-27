@@ -1,9 +1,10 @@
 "use client";
 
 import { ConfigProvider, Layout, theme as antdTheme } from "antd";
-import { useMemo } from "react";
+import { Suspense, useMemo } from "react";
 import { AdminSidebar } from "./AdminSidebar.jsx";
 import { defaultAdminTokens } from "../admin-theme.js";
+import { useOptionalSession } from "../../auth/useSession.js";
 
 const { Header, Content } = Layout;
 
@@ -80,10 +81,13 @@ function buildThemeFromTokens(tokens) {
 function AdminAppLayoutInner({ children, sidebarItems, title }) {
   const { token } = antdTheme.useToken();
   const headerHeight = token.controlHeight * 2;
+  const session = useOptionalSession();
 
   return (
     <Layout style={{ minHeight: "100vh" }} hasSider>
-      <AdminSidebar sidebarItems={sidebarItems} title={title} />
+      <Suspense>
+        <AdminSidebar sidebarItems={sidebarItems} title={title} session={session} />
+      </Suspense>
       <Layout>
         <Header
           style={{

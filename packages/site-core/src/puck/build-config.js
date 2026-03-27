@@ -1,4 +1,6 @@
-export function buildPuckConfig(blocks, categories = {}, fieldInjections = {}) {
+export { puckFieldOverrides } from "./PuckFieldOverrides.jsx";
+
+export function buildPuckConfig(blocks, categories = {}, fieldInjections = {}, rootFields = {}) {
   const components = {};
   for (const [name, blockDef] of Object.entries(blocks)) {
     components[name] = { ...blockDef };
@@ -29,5 +31,7 @@ export function buildPuckConfig(blocks, categories = {}, fieldInjections = {}) {
     };
   }
 
-  return { components, categories: resolvedCategories };
+  const root = Object.keys(rootFields).length > 0 ? { fields: rootFields } : {};
+
+  return { components, categories: resolvedCategories, root };
 }

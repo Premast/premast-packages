@@ -3,12 +3,19 @@ import { Page } from "./models/Page.js";
 import { Global } from "./models/Global.js";
 import { ContentType } from "./models/ContentType.js";
 import { ContentItem } from "./models/ContentItem.js";
+import { User } from "./models/User.js";
 
-export function registerModels(plugins) {
-  const models = { Page, Global, ContentType, ContentItem };
+export async function registerModels(plugins) {
+  const models = { Page, Global, ContentType, ContentItem, User };
   for (const plugin of plugins) {
-    if (!plugin.models) continue;
-    for (const [name, schema] of Object.entries(plugin.models)) {
+    let pluginModels = null;
+    if (typeof plugin.loadModels === "function") {
+      pluginModels = await plugin.loadModels();
+    } else if (plugin.models) {
+      pluginModels = plugin.models;
+    }
+    if (!pluginModels) continue;
+    for (const [name, schema] of Object.entries(pluginModels)) {
       models[name] = mongoose.models[name] ?? mongoose.model(name, schema);
     }
   }

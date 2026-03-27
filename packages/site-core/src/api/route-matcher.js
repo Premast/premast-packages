@@ -1,7 +1,7 @@
 export async function matchRoute(siteConfig, method, request) {
   const url = new URL(request.url);
   const pathname = url.pathname;
-  const routeMap = siteConfig.apiRouteHandlers;
+  const routeMap = await siteConfig.getApiRouteHandlers();
 
   for (const [pattern, handler] of Object.entries(routeMap)) {
     const [routeMethod, routePath] = pattern.split(" ");
@@ -9,9 +9,11 @@ export async function matchRoute(siteConfig, method, request) {
     const params = matchPath(routePath, pathname);
     if (params !== null) {
       try {
+        const connectDB = await siteConfig.getConnectDB();
+        const models = await siteConfig.getModels();
         return await handler(request, params, {
-          connectDB: siteConfig.connectDB,
-          models: siteConfig.mongooseModels,
+          connectDB,
+          models,
           hooks: siteConfig.hooks,
         });
       } catch (err) {

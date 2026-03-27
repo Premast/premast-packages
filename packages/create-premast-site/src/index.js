@@ -152,7 +152,7 @@ async function main() {
   const nextConfig = generateNextConfig(selectedPlugins);
   writeFileSync(nextConfigPath, nextConfig);
 
-  // 5. Create .env.local from example
+  // 5. Create .env.local from example + generate AUTH_SECRET
   const envExamplePath = join(projectDir, ".env.local.example");
   const envPath = join(projectDir, ".env.local");
   if (existsSync(envExamplePath)) {
@@ -161,6 +161,10 @@ async function main() {
       "MONGODB_DB_NAME=premast_starter",
       `MONGODB_DB_NAME=${projectName.replace(/[^a-z0-9]/g, "_")}`,
     );
+    // Generate a random AUTH_SECRET for JWT signing
+    const { randomBytes } = await import("crypto");
+    const authSecret = randomBytes(32).toString("hex");
+    envContent += `\nAUTH_SECRET=${authSecret}\n`;
     writeFileSync(envPath, envContent);
   }
 
@@ -205,6 +209,9 @@ async function main() {
       "# Open in browser:",
       "# Site:  http://localhost:3000",
       "# Admin: http://localhost:3000/admin",
+      "",
+      "# Create your first admin account at:",
+      "# http://localhost:3000/admin/setup",
     ].join("\n"),
     "Next steps",
   );

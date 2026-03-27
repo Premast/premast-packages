@@ -1,33 +1,43 @@
-import mongoose from "mongoose";
-import { SeoHeadBlock } from "./blocks/SeoHeadBlock.jsx";
 import { SeoAdminPage } from "./admin/SeoAdminPage.jsx";
-import { sitemapHandler, robotsHandler } from "./handlers/seo-handlers.js";
-
-const seoMetaSchema = new mongoose.Schema(
-  {
-    pageId: { type: mongoose.Schema.Types.ObjectId, ref: "Page", unique: true },
-    metaTitle: { type: String, default: "" },
-    metaDescription: { type: String, default: "" },
-    ogImage: { type: String, default: "" },
-    noIndex: { type: Boolean, default: false },
-  },
-  { timestamps: true },
-);
 
 export function seoPlugin(options = {}) {
   return {
     name: "seo",
     version: "1.0.0",
 
-    blocks: {
-      SeoHeadBlock,
-    },
-
-    categories: {
-      seo: {
-        title: "SEO",
-        components: ["SeoHeadBlock"],
+    // Page-level SEO fields (appear in Puck root/page sidebar)
+    rootFields: {
+      metaTitle: { type: "text", label: "Meta Title" },
+      metaDescription: { type: "textarea", label: "Meta Description" },
+      ogImage: { type: "text", label: "OG Image URL" },
+      ogType: {
+        type: "select",
+        label: "OG Type",
+        options: [
+          { label: "Website", value: "website" },
+          { label: "Article", value: "article" },
+          { label: "Product", value: "product" },
+        ],
       },
+      twitterCard: {
+        type: "select",
+        label: "Twitter Card",
+        options: [
+          { label: "Summary", value: "summary" },
+          { label: "Summary Large Image", value: "summary_large_image" },
+        ],
+      },
+      canonicalUrl: { type: "text", label: "Canonical URL" },
+      noIndex: {
+        type: "radio",
+        label: "Search Indexing",
+        options: [
+          { label: "Index", value: "false" },
+          { label: "No Index", value: "true" },
+        ],
+      },
+      structuredData: { type: "textarea", label: "Structured Data (JSON-LD)" },
+      focusKeywords: { type: "text", label: "Focus Keywords (comma-separated, max 3)" },
     },
 
     adminPages: [
@@ -39,20 +49,5 @@ export function seoPlugin(options = {}) {
         component: SeoAdminPage,
       },
     ],
-
-    apiRoutes: [
-      { path: "seo/sitemap", method: "GET", handler: sitemapHandler },
-      { path: "seo/robots", method: "GET", handler: robotsHandler },
-    ],
-
-    models: {
-      SeoMeta: seoMetaSchema,
-    },
-
-    hooks: {
-      afterDbConnect: async () => {
-        console.log("[seo-plugin] initialized");
-      },
-    },
   };
 }

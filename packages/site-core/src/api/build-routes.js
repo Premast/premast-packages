@@ -2,26 +2,51 @@ import * as pageHandlers from "./handlers/pages.js";
 import * as globalHandlers from "./handlers/globals.js";
 import * as contentTypeHandlers from "./handlers/content-types.js";
 import * as contentItemHandlers from "./handlers/content-items.js";
+import * as authHandlers from "./handlers/auth.js";
+import { requireAuth, optionalAuth } from "../auth/guard.js";
+
+const BOTH = ["super_admin", "editor"];
 
 const CORE_ROUTES = {
-  "GET /api/pages": pageHandlers.listPages,
-  "POST /api/pages": pageHandlers.createPage,
-  "GET /api/pages/:id": pageHandlers.getPage,
-  "PATCH /api/pages/:id": pageHandlers.patchPage,
-  "DELETE /api/pages/:id": pageHandlers.deletePage,
-  "GET /api/globals": globalHandlers.listGlobals,
-  "GET /api/globals/:key": globalHandlers.getGlobal,
-  "PATCH /api/globals/:key": globalHandlers.patchGlobal,
-  "GET /api/content-types": contentTypeHandlers.listContentTypes,
-  "POST /api/content-types": contentTypeHandlers.createContentType,
-  "GET /api/content-types/:id": contentTypeHandlers.getContentType,
-  "PATCH /api/content-types/:id": contentTypeHandlers.patchContentType,
-  "DELETE /api/content-types/:id": contentTypeHandlers.deleteContentType,
-  "GET /api/content-items": contentItemHandlers.listContentItems,
-  "POST /api/content-items": contentItemHandlers.createContentItem,
-  "GET /api/content-items/:id": contentItemHandlers.getContentItem,
-  "PATCH /api/content-items/:id": contentItemHandlers.patchContentItem,
-  "DELETE /api/content-items/:id": contentItemHandlers.deleteContentItem,
+  // --- Auth (public) ---
+  "POST /api/auth/login": authHandlers.login,
+  "POST /api/auth/logout": authHandlers.logout,
+  "GET /api/auth/me": authHandlers.me,
+  "GET /api/auth/status": authHandlers.status,
+  "POST /api/auth/setup": authHandlers.setup,
+
+  // --- Auth (protected) ---
+  "POST /api/auth/change-password": requireAuth(authHandlers.changePassword),
+  "GET /api/auth/users": requireAuth(authHandlers.listUsers, { roles: ["super_admin"] }),
+  "POST /api/auth/users": requireAuth(authHandlers.createUser, { roles: ["super_admin"] }),
+  "PATCH /api/auth/users/:id": requireAuth(authHandlers.updateUser, { roles: ["super_admin"] }),
+  "DELETE /api/auth/users/:id": requireAuth(authHandlers.deleteUser, { roles: ["super_admin"] }),
+
+  // --- Pages ---
+  "GET /api/pages": optionalAuth(pageHandlers.listPages),
+  "POST /api/pages": requireAuth(pageHandlers.createPage, { roles: BOTH }),
+  "GET /api/pages/:id": optionalAuth(pageHandlers.getPage),
+  "PATCH /api/pages/:id": requireAuth(pageHandlers.patchPage, { roles: BOTH }),
+  "DELETE /api/pages/:id": requireAuth(pageHandlers.deletePage, { roles: BOTH }),
+
+  // --- Globals ---
+  "GET /api/globals": optionalAuth(globalHandlers.listGlobals),
+  "GET /api/globals/:key": optionalAuth(globalHandlers.getGlobal),
+  "PATCH /api/globals/:key": requireAuth(globalHandlers.patchGlobal, { roles: BOTH }),
+
+  // --- Content Types ---
+  "GET /api/content-types": requireAuth(contentTypeHandlers.listContentTypes, { roles: BOTH }),
+  "POST /api/content-types": requireAuth(contentTypeHandlers.createContentType, { roles: ["super_admin"] }),
+  "GET /api/content-types/:id": requireAuth(contentTypeHandlers.getContentType, { roles: BOTH }),
+  "PATCH /api/content-types/:id": requireAuth(contentTypeHandlers.patchContentType, { roles: ["super_admin"] }),
+  "DELETE /api/content-types/:id": requireAuth(contentTypeHandlers.deleteContentType, { roles: ["super_admin"] }),
+
+  // --- Content Items ---
+  "GET /api/content-items": requireAuth(contentItemHandlers.listContentItems, { roles: BOTH }),
+  "POST /api/content-items": requireAuth(contentItemHandlers.createContentItem, { roles: BOTH }),
+  "GET /api/content-items/:id": requireAuth(contentItemHandlers.getContentItem, { roles: BOTH }),
+  "PATCH /api/content-items/:id": requireAuth(contentItemHandlers.patchContentItem, { roles: BOTH }),
+  "DELETE /api/content-items/:id": requireAuth(contentItemHandlers.deleteContentItem, { roles: BOTH }),
 };
 
 export function buildApiRouteMap(plugins) {
