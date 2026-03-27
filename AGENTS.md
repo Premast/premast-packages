@@ -1,5 +1,7 @@
 # Premast Packages — Agent Rules
 
+> **Read this before making ANY changes.** These rules prevent breaking the system.
+
 ## Architecture
 
 This is a **pnpm monorepo** with shared packages consumed by client Next.js sites.
@@ -7,13 +9,83 @@ This is a **pnpm monorepo** with shared packages consumed by client Next.js site
 ```
 premast-packages/
   packages/
-    site-core/          → @premast/site-core (DB, API, admin, plugin system)
-    site-blocks/        → @premast/site-blocks (Puck visual editor blocks)
-    site-plugin-seo/    → @premast/site-plugin-seo (example plugin)
-    site-plugin-*/      → additional plugins
+    site-core/              → @premast/site-core (DB, API, auth, admin, plugin system)
+    site-blocks/            → @premast/site-blocks (Puck visual editor blocks)
+    site-plugin-seo/        → @premast/site-plugin-seo (SEO fields, score analyzer)
+    site-plugin-*/          → additional plugins
+    create-premast-site/    → CLI to scaffold + update client sites
   templates/
-    starter/            → starter template for new client sites
-  docs/                 → documentation
+    starter/                → Template copied by create-premast-site CLI
+  docs/                     → Documentation
+```
+
+## Critical Rules
+
+### 1. Never use `@/` in packages
+
+The `@/` alias resolves to the **consuming client's root**, not the package's root. Always use relative imports inside packages.
+
+```js
+// ✅ Inside a package
+import { connectDB } from "../db/index.js";
+import { MyModel } from "./models/MyModel.js";
+
+// ❌ Will break
+import { connectDB } from "@/db/index.js";
+```
+
+### 2. Mongoose must use HMR-safe pattern
+
+```js
+export const MyModel = mongoose.models.MyModel ?? mongoose.model("MyModel", mySchema);
+```
+
+Without the `??` guard, Next.js HMR will throw "Cannot overwrite model" errors.
+
+### 3. Mongoose is a peer dependency
+
+Import as `import mongoose from "mongoose"` — never add it as a direct dependency in packages. It's listed in `peerDependencies` and resolved from the client's `node_modules`.
+
+### 4. "use client" rules
+
+| Needs "use client" | Does NOT need "use client" |
+|---|---|
+| React hooks (`useState`, `useEffect`) | Puck block `render` functions |
+| Browser APIs (`window`, `document`) | Server components |
+| Ant Design interactive components | Pure data/logic modules |
+| Event handlers (`onClick`, `onChange`) | Mongoose models and schemas |
+
+### 5. CSS in packages — use CSS variables, not imports
+
+```css
+/* ✅ Good — uses CSS custom properties */
+.card { background: var(--theme-surface); color: var(--theme-text); }
+
+/* ❌ Bad — imports tokens directly */
+@import "../theme/tokens.js";
+```
+
+Variables (`--theme-*`) are injected by `ThemeRootVars` in the client project.
+
+### 6. Ant Design + resolve aliases
+
+Client sites use webpack `resolve.alias` in `next.config.mjs` to force a single copy of `react`, `react-dom`, `antd`, and `@ant-design/icons`. This means Ant Design components CAN live in packages — the alias ensures they share the client's `ConfigProvider` context.
+
+For local development with `file:` links, the dev server must use `--webpack` flag (Turbopack doesn't support absolute path aliases).
+
+### 7. Puck blocks — render must be server-safe
+
+Block `render` functions run in both server (SSR) and client contexts. Do NOT use hooks or browser APIs in render. If interactivity is needed, wrap in a separate `"use client"` component.
+
+```js
+// ✅ Server-safe render
+render: ({ text }) => <p>{text}</p>
+
+// ❌ Breaks SSR
+render: ({ text }) => {
+  const [state, setState] = useState(text);
+  return <p>{state}</p>;
+}
 ```
 
 ## Naming Conventions
@@ -21,56 +93,51 @@ premast-packages/
 | Type | Pattern | Example |
 |------|---------|---------|
 | Core packages | `@premast/site-*` | `@premast/site-core`, `@premast/site-blocks` |
-| Plugins | `@premast/site-plugin-*` | `@premast/site-plugin-seo`, `@premast/site-plugin-stripe` |
-| Client sites | Any name | `acme-website`, `client-name-site` |
+| Plugins | `@premast/site-plugin-*` | `@premast/site-plugin-seo` |
+| Client sites | Any name | `acme-website` |
+| File extensions | `.jsx` for JSX, `.js` for logic | `AdminSidebar.jsx`, `config.js` |
+| CSS | `.module.css` for CSS Modules | `Header.module.css` |
 
-## Critical: Ant Design Components Must Be Local
+## Package Structure
 
-Ant Design components that use `theme.useToken()` or `ConfigProvider` context **MUST live in the client project**, not in `@premast/site-core`. Symlinked packages resolve a separate copy of `antd`, creating a dual React context where theme tokens don't propagate.
-
-**Pattern:** Data and logic from packages, React UI from local components.
+### site-core
 
 ```
-@premast/site-core  → exports siteConfig.adminSidebarItems (data)
-client project      → AdminAppLayout.jsx, AdminSidebar.jsx (local, uses data)
+src/
+  admin/          → Admin sidebar builder, admin components (AdminAppLayout, AdminSidebar)
+  api/            → Route builder, route matcher, request handlers
+  auth/           → JWT, password hashing, middleware, session hooks
+  db/             → MongoDB connection, models (Page, ContentType, ContentItem, Global, User)
+  puck/           → Puck config builder, Ant Design field overrides
+  theme/          → CSS variable generator, condensed Puck CSS
+  config.js       → createSiteConfig() — the central factory
+  plugin.js       → Plugin normalization
 ```
 
-The admin shell components (`AdminAppLayout`, `AdminSidebar`) are included in `templates/starter/components/admin/` and should be copied to each client site. They import `designTokens` locally and receive `sidebarItems` from `siteConfig`.
+### site-blocks
 
-Similarly, `ThemeRootVars` lives in `theme/ThemeRootVars.jsx` in the client project, calling `getRootCssVariablesCss()` from `@premast/site-core/theme` with local tokens.
-
-## Package Rules
-
-### Imports in packages (site-core, site-blocks, plugins)
-
-- **NEVER** use `@/` path alias — it resolves to the consuming client's root, not the package
-- Use **relative imports** within the package: `./`, `../`
-- Use **package names** for cross-package imports: `@premast/site-core`
-- Mongoose must be imported as `import mongoose from "mongoose"` (peer dependency)
-
-### "use client" directive
-
-- Components that use React hooks, browser APIs, or Ant Design interactive components MUST have `"use client"` at the top
-- Examples: `AdminSidebar.jsx`, `AdminAppLayout.jsx`, `RichTextField.jsx`
-- Server-safe components (render functions in blocks) must NOT have `"use client"`
-
-### Mongoose model pattern
-
-Always use the HMR-safe pattern:
-```js
-export const MyModel = mongoose.models.MyModel ?? mongoose.model("MyModel", mySchema);
+```
+src/
+  blocks/         → Puck block definitions (Hero, Text, Heading, Columns, etc.)
+  fields/         → Custom field components (RichTextField)
+  styles/         → CSS Modules for blocks
+  index.js        → Exports baseBlocks + baseCategories
 ```
 
-### CSS in packages
+### site-plugin-seo
 
-- Use **CSS Modules** (`.module.css`) for component styles
-- Reference theme via **CSS custom properties**: `var(--theme-accent)`, `var(--theme-text)`, etc.
-- These variables are injected by the client's `ThemeRootVars` component
-- Do NOT import design tokens directly in package CSS — use CSS variables
+```
+src/
+  fields/         → SeoScoreField, seo-analyzer
+  models/         → SeoMeta schema
+  handlers/       → API handlers for SEO data
+  admin/          → SeoAdminPage
+  index.js        → Plugin factory function
+  editor.js       → Client-safe exports (fields only, no mongoose)
+  server.js       → Server-safe exports (models, handlers)
+```
 
 ## Plugin Interface
-
-Every plugin is a **function** returning a config object:
 
 ```js
 export function myPlugin(options = {}) {
@@ -78,49 +145,66 @@ export function myPlugin(options = {}) {
     name: "my-plugin",       // required, unique string
     version: "1.0.0",        // optional semver
     blocks: {},               // Puck component definitions
-    fields: {},               // Field injections into existing blocks
+    fields: {},               // Field injections into root fields
     categories: {},           // Puck editor categories
-    adminPages: [],           // Admin sidebar items with React components
-    apiRoutes: [],            // API endpoints (path, method, handler)
+    adminPages: [],           // Admin sidebar items { key, label, icon, path, component }
+    apiRoutes: [],            // API endpoints { path, method, handler }
     models: {},               // Mongoose schema definitions (NOT models)
     hooks: {},                // Lifecycle hooks
   };
 }
 ```
 
-### Plugin API route handlers
+### Plugin API route handler signature
 
-Signature: `async (request, params, context) => Response`
-
-- `context.connectDB` — connects to MongoDB
-- `context.models` — all registered Mongoose models
-- `context.hooks` — all registered lifecycle hooks
-
-### Plugin admin pages
-
-The admin `[...plugin]` catch-all route renders plugin components. Each `adminPages` entry needs:
-- `key` — unique identifier
-- `label` — sidebar text
-- `icon` — Ant Design icon name string (e.g., `"SearchOutlined"`)
-- `path` — URL path (e.g., `/admin/seo`)
-- `component` — React component to render
-
-## Client Site Structure
-
-```
-client-site/
-  site.config.js        ← createSiteConfig() — THE central config file
-  theme/tokens.js       ← client's design tokens
-  theme/antd-theme.js   ← client's Ant Design theme
-  app/
-    api/[...route]/     ← single catch-all → siteConfig.apiRouteHandlers
-    admin/[...plugin]/  ← catch-all for plugin admin pages
-    (site)/             ← public site pages
+```js
+async (request, params, context) => Response
+// context.connectDB — connects to MongoDB
+// context.models    — all registered Mongoose models
+// context.hooks     — all registered lifecycle hooks
 ```
 
-### Key file: `site.config.js`
+### Plugin split: editor.js vs server.js
 
-This is where blocks, plugins, and categories are registered:
+Plugins that have both client and server code should split exports:
+- `editor.js` — client-safe (fields, UI components). NO mongoose imports.
+- `server.js` — server-safe (models, API handlers). Can import mongoose.
+- `index.js` — the plugin factory. Imports from both.
+
+## When Adding New Functionality
+
+| What | Where | Why |
+|------|-------|-----|
+| New Puck block for all clients | `@premast/site-blocks` | Shared across all sites |
+| New feature (SEO, payments, AI) | New `@premast/site-plugin-*` | Modular, optional |
+| Client-specific block | Client's `components/puck/` | Only for that site |
+| Bug fix in shared code | The relevant package | Fix once, all sites benefit |
+| New API endpoint (shared) | `site-core` or a plugin | Available to all sites |
+| New API endpoint (one client) | Client's custom route | Only for that site |
+
+## Client Site Config
+
+### next.config.mjs requirements
+
+```js
+const nextConfig = {
+  serverExternalPackages: ["mongoose"],
+  transpilePackages: [
+    "@premast/site-core",
+    "@premast/site-blocks",
+    // ... all installed @premast plugins
+  ],
+  turbopack: {},
+  webpack(config) {
+    // Resolve aliases for react, react-dom, antd, @ant-design/icons
+    // Forces single copy when using file: linked packages
+    Object.assign(config.resolve.alias, aliases);
+    return config;
+  },
+};
+```
+
+### site.config.js — the central config
 
 ```js
 import { createSiteConfig } from "@premast/site-core";
@@ -133,33 +217,33 @@ export const siteConfig = createSiteConfig({
 });
 ```
 
-`siteConfig` provides: `puckConfig`, `adminSidebarItems`, `apiRouteHandlers`, `mongooseModels`, `connectDB`, `hooks`.
+Provides: `puckConfig`, `adminSidebarItems`, `apiRouteHandlers`, `mongooseModels`, `connectDB`, `hooks`.
 
-## When adding new functionality
+### puck.config.js — client-safe Puck config
 
-- **New Puck block for all clients** → add to `@premast/site-blocks`
-- **New feature (SEO, payments, AI)** → create a new `@premast/site-plugin-*`
-- **Client-specific block** → add in client's own `components/puck/` directory
-- **Bug fix in shared code** → fix in the relevant package, publish new version
-- **New API endpoint** → if shared, add to site-core or a plugin; if client-specific, add a custom route in the client
+Same blocks/categories but imported without mongoose. Used in `"use client"` editor components to avoid pulling mongoose into the browser bundle.
 
-## File extensions
+## Auth System
 
-- `.jsx` for files containing JSX
-- `.js` for pure logic, configs, and non-JSX modules
-- `.module.css` for CSS Modules
+- JWT-based, stored in HTTP-only cookies
+- `middleware.js` protects `/admin` routes (redirects to `/admin/login`)
+- `/admin/setup` creates the first super admin (one-time, disabled after first user exists)
+- Roles: `super_admin`, `editor`
+- Auth handlers in `@premast/site-core/auth`
 
-## next.config.mjs (client sites)
+## Database Models
 
-Client sites MUST include `transpilePackages` for all `@premast/*` packages:
+| Model | Fields | Purpose |
+|-------|--------|---------|
+| Page | title, slug, content, published | Standalone pages |
+| ContentType | name, slug, urlPrefix, templateContent | Content type blueprints |
+| ContentItem | title, slug, contentType, content, metadata, published | Individual content pieces |
+| Global | key (header/footer), content, published | Shared elements |
+| User | email, passwordHash, name, role | Authentication |
 
-```js
-const nextConfig = {
-  serverExternalPackages: ["mongoose"],
-  transpilePackages: [
-    "@premast/site-core",
-    "@premast/site-blocks",
-    // ... all installed @premast plugins
-  ],
-};
-```
+## Publishing
+
+1. Bump versions in all `package.json` files
+2. `git tag -a vX.Y.Z -m "description"`
+3. `pnpm publish:all`
+4. `gh release create vX.Y.Z --title "..." --notes "..."`

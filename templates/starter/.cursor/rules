@@ -1,0 +1,73 @@
+# Premast CMS Client Site — Cursor Rules
+
+## Project Type
+This is a Premast CMS client site — a Next.js app powered by @premast/* packages.
+
+## CRITICAL — Do Not Break
+
+- NEVER import mongoose in "use client" files — it's server-only
+- NEVER create individual API route files (e.g., app/api/pages/route.js) — use the catch-all at app/api/[...route]/route.js
+- NEVER edit files in node_modules/@premast/* — changes are lost on install
+- NEVER remove webpack aliases from next.config.mjs — breaks admin theme
+- NEVER remove transpilePackages from next.config.mjs — breaks @premast/* JSX
+- ALWAYS keep site.config.js and puck.config.js in sync when adding blocks
+- ALWAYS add "use client" to files using React hooks, browser APIs, or Ant Design components
+- ALWAYS use CSS variables (var(--theme-*)) instead of hardcoded colors
+
+## File Purposes
+
+- site.config.js → Central config (blocks + plugins). Server-safe, has mongoose access.
+- puck.config.js → Client-safe Puck config. Same blocks but NO mongoose. Used in "use client" editor components.
+- middleware.js → Auth middleware. Protects /admin routes.
+- theme/tokens.js → Design tokens (CSS variables for colors, fonts).
+- theme/antd-theme.js → Ant Design theme config for admin panel.
+- theme/puck.css → Puck editor theme overrides.
+- app/api/[...route]/route.js → Catch-all API route. Do NOT add separate route files.
+
+## Import Rules
+
+- Use @/ alias for project files: import { siteConfig } from "@/site.config"
+- Use package names for @premast imports: import { createSiteConfig } from "@premast/site-core"
+- In "use client" components: import { puckConfig } from "@/puck.config" (NOT site.config.js)
+
+## Adding a New Block
+
+1. Create components/puck/MyBlock.jsx (with fields, defaultProps, render)
+2. Create components/puck/MyBlock.module.css (use var(--theme-*) for colors)
+3. Add MyBlock to site.config.js blocks AND categories
+4. Add MyBlock to puck.config.js blocks AND categories
+5. Restart dev server
+
+## Adding a Plugin
+
+1. npm install @premast/site-plugin-xyz
+2. Import and add to site.config.js plugins array
+3. Add "@premast/site-plugin-xyz" to next.config.mjs transpilePackages
+
+## CSS Rules
+
+- Use CSS Modules (.module.css) for component styles
+- Use var(--theme-accent), var(--theme-text), var(--theme-surface), etc.
+- Never hardcode colors — breaks theming
+
+## Mongoose Pattern
+
+Always use HMR-safe pattern for custom models:
+```
+export const MyModel = mongoose.models.MyModel ?? mongoose.model("MyModel", mySchema);
+```
+
+## Auth
+
+- JWT in HTTP-only cookies
+- /admin/setup → create first admin (one-time)
+- /admin/login → login page
+- Roles: super_admin, editor
+
+## Database Models
+
+- Page → standalone pages (Home, About)
+- ContentType → content blueprints (Blog Article, Service)
+- ContentItem → individual content pieces
+- Global → header, footer
+- User → admin users
