@@ -121,10 +121,10 @@ async function main() {
 
   pkg.name = projectName;
 
-  // Replace workspace:* with ^0.1.0 for standalone projects
+  // Replace workspace:* with ^0.2.0 for standalone projects
   for (const dep of Object.keys(pkg.dependencies)) {
     if (pkg.dependencies[dep] === "workspace:*") {
-      pkg.dependencies[dep] = "^0.1.0";
+      pkg.dependencies[dep] = "^0.2.0";
     }
   }
 
@@ -137,7 +137,7 @@ async function main() {
 
   // Add selected plugin dependencies
   for (const plugin of selectedPlugins) {
-    pkg.dependencies[plugin.value] = "^0.1.0";
+    pkg.dependencies[plugin.value] = "^0.2.0";
   }
 
   writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + "\n");
@@ -170,7 +170,7 @@ async function main() {
 
   // 5b. Write .premast.json metadata (used by premast-update)
   const premastMeta = {
-    templateVersion: pkg.dependencies["@premast/site-core"]?.replace(/^\^/, "") || "0.1.0",
+    templateVersion: pkg.dependencies["@premast/site-core"]?.replace(/^\^/, "") || "0.2.0",
     createdAt: new Date().toISOString(),
     lastUpdate: null,
   };
