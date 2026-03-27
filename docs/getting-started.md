@@ -3,108 +3,150 @@
 ## Prerequisites
 
 - Node.js 18+
-- pnpm 10+ (`npm install -g pnpm`)
 - MongoDB running locally or a MongoDB Atlas connection string
+- GitHub personal access token (for installing `@premast/*` packages)
 
-## Setting Up a New Client Site
+## 1. Generate a GitHub Token
 
-### 1. Copy the starter template
+Premast packages are hosted on GitHub Packages. You need a token to install them.
 
-```bash
-cp -r templates/starter /path/to/client-site
-cd /path/to/client-site
-```
+1. Go to [github.com/settings/tokens](https://github.com/settings/tokens)
+2. Click **"Generate new token (classic)"**
+3. Select scope: **`read:packages`**
+4. Copy the token
 
-### 2. Install dependencies
-
-```bash
-pnpm install
-```
-
-During development, if you're working from the monorepo, dependencies resolve via `workspace:*`. For standalone client sites, publish the packages to GitHub Packages first (see below).
-
-### 3. Configure environment
+Set it as an environment variable (add to your `~/.zshrc` or `~/.bashrc`):
 
 ```bash
-cp .env.local.example .env.local
+export GITHUB_TOKEN=ghp_your_token_here
 ```
 
-Edit `.env.local`:
+## 2. Create a New Site
+
+```bash
+npx @premast/create-premast-site
 ```
+
+The CLI will:
+- Ask for a project name and which plugins to include
+- Copy the starter template
+- Configure `.npmrc` for GitHub Packages authentication
+- Generate `site.config.js`, `next.config.mjs`, and `.env.local`
+- Install dependencies
+- Initialize a git repository
+
+## 3. Configure Your Database
+
+Edit `.env.local` in your new project:
+
+```env
 MONGODB_URI=mongodb://localhost:27017
-MONGODB_DB_NAME=client_name_db
+MONGODB_DB_NAME=your_project_db
 ```
 
-### 4. Customize the site
-
-- **Design tokens**: Edit `theme/tokens.js` to change colors, fonts, etc.
-- **Ant Design theme**: Edit `theme/antd-theme.js` to match your tokens.
-- **Plugins**: Edit `site.config.js` to add/remove plugins.
-
-### 5. Run the dev server
+## 4. Start the Dev Server
 
 ```bash
-pnpm dev
+cd your-project-name
+npm run dev
 ```
 
-- Site: http://localhost:3000
-- Admin: http://localhost:3000/admin
+## 5. Create Your Admin Account
 
-### 6. Add plugins
+Open [http://localhost:3000/admin/setup](http://localhost:3000/admin/setup) and create your first super admin account.
+
+Then visit [http://localhost:3000/admin](http://localhost:3000/admin) to log in.
+
+## 6. Customize Your Site
+
+| What | File | Purpose |
+|------|------|---------|
+| Colors & fonts | `theme/tokens.js` | Design tokens (CSS variables) |
+| Ant Design theme | `theme/antd-theme.js` | Admin panel theme overrides |
+| Plugins | `site.config.js` | Register blocks, plugins, categories |
+| Header/Footer | `components/layout/` | Site header and footer components |
+
+## 7. Add Plugins
 
 ```bash
-pnpm add @premast/site-plugin-seo
+npm install @premast/site-plugin-seo
 ```
 
 Then in `site.config.js`:
+
 ```js
 import { seoPlugin } from "@premast/site-plugin-seo";
 
 export const siteConfig = createSiteConfig({
   blocks: baseBlocks,
   categories: baseCategories,
-  plugins: [
-    seoPlugin(),
-  ],
+  plugins: [seoPlugin()],
 });
 ```
 
----
+Don't forget to add the plugin to `transpilePackages` in `next.config.mjs`.
 
-## Project Structure (Client Site)
+## 8. Update Premast
 
-```
-client-site/
-  site.config.js        ← Plugin registration + config
-  theme/
-    tokens.js           ← Design tokens (colors, fonts)
-    antd-theme.js       ← Ant Design theme mapping
-  app/
-    layout.jsx          ← Root layout
-    (site)/
-      layout.jsx        ← Public site layout (header/footer)
-      page.jsx          ← Home page
-    admin/
-      layout.jsx        ← Admin panel layout
-      [...plugin]/      ← Auto-routes for plugin admin pages
-    api/
-      [...route]/       ← Single catch-all delegating to siteConfig
-  components/           ← Client-specific components
-```
-
----
-
-## Installing Packages from GitHub Packages
-
-For standalone client sites (not in the monorepo), configure npm to use the Premast registry:
+When a new version is released:
 
 ```bash
-# .npmrc in client site root
+npx premast-update
+```
+
+This will:
+- Update all `@premast/*` packages to the latest version
+- Check for template file changes and show you diffs
+- Let you accept, skip, or backup each changed file
+
+---
+
+## Project Structure
+
+```
+your-site/
+  .premast.json           ← Version tracking (used by premast-update)
+  .npmrc                  ← GitHub Packages auth
+  site.config.js          ← Plugin registration + config
+  puck.config.js          ← Client-safe Puck config (no mongoose)
+  middleware.js            ← Auth middleware for /admin routes
+  theme/
+    tokens.js             ← Design tokens (colors, fonts)
+    antd-theme.js         ← Ant Design theme mapping
+    puck.css              ← Puck editor theme overrides
+    ThemeRootVars.jsx      ← Injects CSS variables
+  app/
+    layout.jsx            ← Root layout
+    antd-provider.jsx     ← Ant Design ConfigProvider
+    (site)/
+      layout.jsx          ← Public site layout (header/footer)
+      page.jsx            ← Home page
+      [...path]/page.jsx  ← Dynamic content item routes
+    admin/
+      layout.jsx          ← Admin panel layout
+      login/              ← Login page
+      setup/              ← First-time admin setup
+      (dashboard)/        ← Protected admin pages
+    api/
+      [...route]/         ← Single catch-all → siteConfig.apiRouteHandlers
+  components/
+    admin/                ← Admin shell (local for Ant Design theme)
+    layout/               ← Header, Footer
+```
+
+---
+
+## GitHub Packages Authentication (Manual)
+
+If you didn't use `create-premast-site`, add this `.npmrc` to your project root:
+
+```ini
 @premast:registry=https://npm.pkg.github.com
 //npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
 ```
 
-Then install normally:
+Then install packages normally:
+
 ```bash
-pnpm add @premast/site-core @premast/site-blocks
+npm install @premast/site-core @premast/site-blocks
 ```
