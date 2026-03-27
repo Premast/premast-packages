@@ -5,8 +5,8 @@ import "./globals.css";
 import styles from "./layout.module.css";
 
 export const metadata = {
-   title: "PMST",
-   description: "PMST website",
+   title: "Premast Site",
+   description: "Built with Premast CMS",
 };
 
 export default function RootLayout({ children }) {

@@ -1,0 +1,26 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.lead {
+  margin: 0 0 0.75rem;
+  font-size: 0.95rem;
+  color: var(--theme-text-muted);
+  max-width: 42ch;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.body {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--theme-text);
+  white-space: pre-wrap;
+}
