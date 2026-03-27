@@ -36,11 +36,11 @@ const CLIENT_ONLY_FILES = new Set([
   "package-lock.json",
   "pnpm-lock.yaml",
   "yarn.lock",
+  "next.config.mjs",
 ]);
 
 // Files that should be compared and optionally updated
 const MANAGED_FILES = [
-  "next.config.mjs",
   "middleware.js",
   "jsconfig.json",
   "app/layout.jsx",
@@ -58,6 +58,11 @@ const MANAGED_FILES = [
   "app/api/[...route]/route.js",
   "components/admin/AdminAppLayout.jsx",
   "components/admin/AdminSidebar.jsx",
+  "components/admin/pages/AdminPagesView.jsx",
+  "components/puck/PuckFieldOverrides.jsx",
+  "components/seo/SearchIndexingField.jsx",
+  "components/seo/SeoScoreField.jsx",
+  "components/seo/seo-analyzer.js",
   "theme/puck.css",
   "theme/ThemeRootVars.jsx",
   "app/antd-provider.jsx",
