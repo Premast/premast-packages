@@ -195,12 +195,9 @@ async function main() {
   // 7. Initialize git
   s.start("Initializing git repository...");
   try {
-    execSync("git init", { cwd: projectDir, stdio: "pipe" });
-    execSync("git add -A", { cwd: projectDir, stdio: "pipe" });
-    execSync('git commit -m "Initial commit from create-premast-site"', {
-      cwd: projectDir,
-      stdio: "pipe",
-    });
+    await runCommand("git", ["init"], projectDir);
+    await runCommand("git", ["add", "-A"], projectDir);
+    await runCommand("git", ["commit", "-m", "Initial commit from create-premast-site"], projectDir);
     s.stop("Git repository initialized.");
   } catch {
     s.stop(pc.yellow("Git init failed — initialize manually if needed."));
