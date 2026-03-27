@@ -222,7 +222,7 @@ async function main() {
       "# http://localhost:3000/admin/setup",
       "",
       "# To update Premast packages later:",
-      "npx premast-update",
+      `${packageManager === "npm" ? "npm run" : packageManager} update`,
     ].join("\n"),
     "Next steps",
   );

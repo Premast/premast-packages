@@ -12,7 +12,7 @@ This is a **Premast CMS client site** — a Next.js application powered by share
 ├── site.config.js          ← Central config: blocks, plugins, categories
 ├── puck.config.js          ← Client-safe Puck config (NO mongoose)
 ├── middleware.js            ← Auth middleware (protects /admin)
-├── .premast.json           ← Version tracking (used by premast-update)
+├── .premast.json           ← Version tracking (used by npm run update)
 ├── theme/
 │   ├── tokens.js           ← Design tokens (colors, fonts, spacing)
 │   ├── antd-theme.js       ← Ant Design theme for admin panel
@@ -145,7 +145,7 @@ transpilePackages: [..., "@premast/site-plugin-xyz"]
 ### Update Premast packages
 
 ```bash
-npx premast-update
+npm run update
 ```
 
 ### Change header/footer

@@ -51,7 +51,7 @@ npm run dev
 ### Update to Latest Version
 
 ```bash
-npx premast-update
+npm run update
 ```
 
 ## Architecture
@@ -74,7 +74,7 @@ premast-packages/
 2. **`site.config.js`** is the central config — registers blocks, plugins, and categories
 3. **Puck Editor** provides visual page building in the admin panel
 4. **Plugins** extend the CMS with new blocks, fields, admin pages, and API routes
-5. **`premast-update`** keeps client sites in sync with new template versions
+5. **`npm run update`** keeps client sites in sync with new template versions
 
 ### Client Site Structure
 

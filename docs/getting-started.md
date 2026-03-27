@@ -91,7 +91,7 @@ Don't forget to add the plugin to `transpilePackages` in `next.config.mjs`.
 When a new version is released:
 
 ```bash
-npx premast-update
+npm run update
 ```
 
 This will:
@@ -105,7 +105,7 @@ This will:
 
 ```
 your-site/
-  .premast.json           ← Version tracking (used by premast-update)
+  .premast.json           ← Version tracking (used by npm run update)
   .npmrc                  ← GitHub Packages auth
   site.config.js          ← Plugin registration + config
   puck.config.js          ← Client-safe Puck config (no mongoose)
