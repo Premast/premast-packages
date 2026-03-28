@@ -8,11 +8,12 @@
  */
 import { baseBlocks, baseCategories } from "@premast/site-blocks";
 import { seoPlugin } from "@premast/site-plugin-seo";
+import { uiPlugin } from "@premast/site-plugin-ui";
 import { SeoScoreField } from "@/components/seo/SeoScoreField";
 import { SearchIndexingField } from "@/components/seo/SearchIndexingField";
 import { buildPuckConfig } from "@premast/site-core/puck";
 
-const plugins = [seoPlugin()];
+const plugins = [seoPlugin(), uiPlugin()];
 
 // Merge root fields from all plugins
 const rootFields = {};

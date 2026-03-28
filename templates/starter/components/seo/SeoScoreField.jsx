@@ -17,15 +17,15 @@ function scoreColor(score) {
 }
 
 function CircularGauge({ score }) {
-  const size = 100;
-  const stroke = 8;
+  const size = 56;
+  const stroke = 5;
   const radius = (size - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (score / 100) * circumference;
   const color = scoreColor(score);
 
   return (
-    <svg width={size} height={size} style={{ display: "block", margin: "0 auto" }}>
+    <svg width={size} height={size} style={{ display: "block", flexShrink: 0 }}>
       <circle
         cx={size / 2}
         cy={size / 2}
@@ -53,7 +53,7 @@ function CircularGauge({ score }) {
         textAnchor="middle"
         dominantBaseline="central"
         fill={color}
-        fontSize="28"
+        fontSize="16"
         fontWeight="700"
         style={{ transition: "fill 0.4s ease" }}
       >
@@ -103,14 +103,13 @@ export function SeoScoreField() {
 
   return (
     <div style={{ padding: "12px 0" }}>
-      <div style={{ textAlign: "center", marginBottom: 8 }}>
-        <CircularGauge score={totalScore} />
-        <div style={{ fontSize: 13, fontWeight: 600, color, marginTop: 4, transition: "color 0.4s ease" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color, transition: "color 0.4s ease" }}>
           {label}
         </div>
+        <CircularGauge score={totalScore} />
       </div>
-
-      <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 12 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
         {checks.map((c) => (
           <CheckItem key={c.key} label={c.result.label} status={c.result.status} />
         ))}

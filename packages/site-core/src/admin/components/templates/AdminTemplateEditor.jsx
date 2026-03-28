@@ -6,7 +6,7 @@ import "@puckeditor/core/puck.css";
 import "../../../theme/css/puck-condensed.css";
 import { useEffect, useState } from "react";
 import styles from "./AdminTemplateEditor.module.css";
-import { puckFieldOverrides, DrawerItemOverride } from "../../../puck/build-config.js";
+import { puckFieldOverrides, DrawerItemOverride, BlockSearchOverride } from "../../../puck/build-config.js";
 import { usePuckConfig } from "../../PuckConfigContext.jsx";
 
 const EMPTY_DATA = { content: [], root: {} };
@@ -128,7 +128,7 @@ export function AdminTemplateEditor({ templateId }) {
           onPublish={handlePublish}
           ui={{ leftSideBarVisible: false, rightSideBarWidth: 480 }}
           overrides={{
-            fieldTypes: puckFieldOverrides, drawerItem: DrawerItemOverride,
+            fieldTypes: puckFieldOverrides, drawerItem: DrawerItemOverride, components: BlockSearchOverride,
             headerActions: ({ children }) => (
               <>
                 <Flex align="center" gap={8} style={{ marginRight: 8 }}>

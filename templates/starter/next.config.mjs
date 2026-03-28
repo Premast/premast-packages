@@ -30,8 +30,8 @@ const nextConfig = {
   transpilePackages: [
     "@premast/site-core",
     "@premast/site-blocks",
-    // Add any @premast plugins here:
-    // "@premast/site-plugin-seo",
+    "@premast/site-plugin-seo",
+    "@premast/site-plugin-ui",
   ],
   // Note: build and dev use --webpack flag for resolve.alias support.
   // Turbopack does not support absolute-path aliases needed for pnpm.
