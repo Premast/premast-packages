@@ -114,9 +114,10 @@ export default async function ContentCatchAllPage({ params }) {
         const puckData = parsePuckData(item.content);
         if (!puckData) return notFound();
 
+        const finalData = await siteConfig.runBeforePageRender(puckData, item);
         return (
           <article>
-            <Render config={siteConfig.puckConfig} data={puckData} />
+            <Render config={siteConfig.puckConfig} data={finalData} />
           </article>
         );
       }
@@ -134,9 +135,10 @@ export default async function ContentCatchAllPage({ params }) {
         const puckData = parsePuckData(page.content);
         if (!puckData) return notFound();
 
+        const finalData = await siteConfig.runBeforePageRender(puckData, page);
         return (
           <article>
-            <Render config={siteConfig.puckConfig} data={puckData} />
+            <Render config={siteConfig.puckConfig} data={finalData} />
           </article>
         );
       }

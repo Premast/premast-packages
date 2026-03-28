@@ -55,6 +55,12 @@ export function buildApiRouteMap(plugins) {
     if (!plugin.apiRoutes) continue;
     for (const route of plugin.apiRoutes) {
       const key = `${route.method.toUpperCase()} /api/${route.path}`;
+      if (routes[key]) {
+        const source = key in CORE_ROUTES ? "core" : "another plugin";
+        console.warn(
+          `[premast] Plugin "${plugin.name}" registers route "${key}" which conflicts with ${source}. The plugin handler will take precedence.`,
+        );
+      }
       routes[key] = route.handler;
     }
   }

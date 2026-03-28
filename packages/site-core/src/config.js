@@ -125,6 +125,26 @@ export function createSiteConfig({ blocks = {}, categories = {}, plugins = [], s
     return collectHooks(allPlugins);
   }
 
+  /**
+   * Run beforePageRender hooks — lets plugins transform Puck data before render.
+   * Returns the (possibly transformed) puckData.
+   */
+  async function runBeforePageRender(puckData, page) {
+    const resolvedHooks = await getHooks();
+    let data = puckData;
+    for (const { pluginName, fn } of resolvedHooks.beforePageRender) {
+      try {
+        const result = await fn({ data, page });
+        if (result && typeof result === "object" && Array.isArray(result.content)) {
+          data = result;
+        }
+      } catch (e) {
+        console.error(`[premast] beforePageRender hook from "${pluginName}" failed:`, e);
+      }
+    }
+    return data;
+  }
+
   return {
     puckConfig,
     adminSidebarItems,
@@ -135,6 +155,7 @@ export function createSiteConfig({ blocks = {}, categories = {}, plugins = [], s
     getModels,
     getConnectDB,
     getHooks,
+    runBeforePageRender,
     hooks,
     plugins: validatedPlugins,
     theme,

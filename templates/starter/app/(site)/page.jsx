@@ -74,9 +74,10 @@ export default async function Home() {
     const puckData = parsePuckData(page.content);
 
     if (puckData) {
+      const finalData = await siteConfig.runBeforePageRender(puckData, page);
       return (
         <div className={styles.page}>
-          <Render config={siteConfig.puckConfig} data={puckData} />
+          <Render config={siteConfig.puckConfig} data={finalData} />
         </div>
       );
     }
