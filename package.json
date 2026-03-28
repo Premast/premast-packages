@@ -9,5 +9,11 @@
     "version:check": "node scripts/sync-versions.js",
     "version:set": "node scripts/sync-versions.js",
     "publish:all": "node scripts/sync-versions.js && pnpm build:cli && pnpm -r publish --no-git-checks"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "node scripts/sync-versions.js"
+  },
+  "devDependencies": {
+    "simple-git-hooks": "^2.13.1"
   }
 }
