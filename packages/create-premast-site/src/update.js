@@ -54,6 +54,7 @@ const MANAGED_FILES = [
   "app/admin/setup/layout.jsx",
   "app/admin/(dashboard)/layout.jsx",
   "app/admin/(dashboard)/page.jsx",
+  "app/admin/(dashboard)/PuckProvider.jsx",
   "app/admin/(dashboard)/[...path]/page.jsx",
   "app/api/[...route]/route.js",
   "components/puck/PuckFieldOverrides.jsx",
