@@ -8,4 +8,8 @@ export const siteConfig = createSiteConfig({
   plugins: [
     seoPlugin(),
   ],
+  serverPlugins: async () => {
+    const { seoPluginServer } = await import("@premast/site-plugin-seo/server");
+    return [{ name: "seo", ...seoPluginServer }];
+  },
 });

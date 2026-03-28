@@ -214,7 +214,10 @@ export function AdminTemplatesView() {
           <Form.Item
             name="urlPrefix"
             label="URL Prefix"
-            rules={[{ required: true, message: "Required" }]}
+            rules={[
+              { required: true, message: "Required" },
+              { pattern: /^\/[a-z0-9]+(?:[/-][a-z0-9]+)*$/, message: "Must start with / and contain only lowercase letters, numbers, hyphens (e.g. /blog)" },
+            ]}
             extra="Public URL path prefix (e.g. /blog)"
           >
             <Input placeholder="/blog" />

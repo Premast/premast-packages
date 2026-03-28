@@ -11,17 +11,19 @@ export async function matchRoute(siteConfig, method, request) {
       try {
         const connectDB = await siteConfig.getConnectDB();
         const models = await siteConfig.getModels();
+        const hooks = await siteConfig.getHooks();
         return await handler(request, params, {
           connectDB,
           models,
-          hooks: siteConfig.hooks,
+          hooks,
         });
       } catch (err) {
         console.error(`[premast] ${pattern}:`, err);
-        return Response.json(
-          { error: err.message ?? "Internal server error" },
-          { status: 500 },
-        );
+        const status = err.name === "ValidationError" ? 400 : 500;
+        const message = status === 400
+          ? err.message
+          : "Internal server error";
+        return Response.json({ error: message }, { status });
       }
     }
   }

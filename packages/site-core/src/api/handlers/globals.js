@@ -1,16 +1,20 @@
-export async function listGlobals(request, _params, { connectDB }) {
+export async function listGlobals(request, _params, { connectDB, session }) {
   await connectDB();
   const { Global } = (await import("../../db/models/Global.js"));
   const { searchParams } = new URL(request.url);
   const published = searchParams.get("published");
   const filter = {};
-  if (published === "true") filter.published = true;
-  if (published === "false") filter.published = false;
+  if (!session) {
+    filter.published = true;
+  } else {
+    if (published === "true") filter.published = true;
+    if (published === "false") filter.published = false;
+  }
   const globals = await Global.find(filter).sort({ key: 1 }).lean();
   return Response.json({ data: globals });
 }
 
-export async function getGlobal(_request, params, { connectDB }) {
+export async function getGlobal(_request, params, { connectDB, session }) {
   const { VALID_KEYS, Global } = (await import("../../db/models/Global.js"));
   if (!VALID_KEYS.includes(params.key)) {
     return Response.json(
@@ -19,7 +23,9 @@ export async function getGlobal(_request, params, { connectDB }) {
     );
   }
   await connectDB();
-  const doc = await Global.findOne({ key: params.key }).lean();
+  const filter = { key: params.key };
+  if (!session) filter.published = true;
+  const doc = await Global.findOne(filter).lean();
   if (!doc) return Response.json({ error: "not found" }, { status: 404 });
   return Response.json({ data: doc });
 }

@@ -6,6 +6,41 @@ import { mergeAdminTokens } from "./admin/admin-theme.js";
 export function createSiteConfig({ blocks = {}, categories = {}, plugins = [], serverPlugins, theme = {}, admin = {} }) {
   const validatedPlugins = plugins.map(validatePlugin);
 
+  // Check for duplicate plugin names
+  const pluginNames = new Set();
+  for (const plugin of validatedPlugins) {
+    if (pluginNames.has(plugin.name)) {
+      throw new Error(`Duplicate plugin name "${plugin.name}". Each plugin must have a unique name.`);
+    }
+    pluginNames.add(plugin.name);
+  }
+
+  // Check for duplicate admin page keys
+  const adminPageKeys = new Set();
+  for (const plugin of validatedPlugins) {
+    if (!plugin.adminPages) continue;
+    for (const page of plugin.adminPages) {
+      const key = page.path || `/admin/${page.key}`;
+      if (adminPageKeys.has(key)) {
+        throw new Error(`Plugin "${plugin.name}" registers admin page "${key}" which conflicts with another plugin.`);
+      }
+      adminPageKeys.add(key);
+    }
+  }
+
+  // Check for duplicate API routes
+  const apiRouteKeys = new Set();
+  for (const plugin of validatedPlugins) {
+    if (!plugin.apiRoutes) continue;
+    for (const route of plugin.apiRoutes) {
+      const key = `${route.method.toUpperCase()} /api/${route.path}`;
+      if (apiRouteKeys.has(key)) {
+        throw new Error(`Plugin "${plugin.name}" registers API route "${key}" which conflicts with another plugin.`);
+      }
+      apiRouteKeys.add(key);
+    }
+  }
+
   // Collect all blocks (base + plugin)
   const allBlocks = { ...blocks };
   for (const plugin of validatedPlugins) {
@@ -85,6 +120,11 @@ export function createSiteConfig({ blocks = {}, categories = {}, plugins = [], s
     ]);
   }
 
+  async function getHooks() {
+    const allPlugins = await resolveServerPlugins();
+    return collectHooks(allPlugins);
+  }
+
   return {
     puckConfig,
     adminSidebarItems,
@@ -94,6 +134,7 @@ export function createSiteConfig({ blocks = {}, categories = {}, plugins = [], s
     getApiRouteHandlers,
     getModels,
     getConnectDB,
+    getHooks,
     hooks,
     plugins: validatedPlugins,
     theme,

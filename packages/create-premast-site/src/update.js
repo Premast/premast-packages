@@ -25,7 +25,6 @@ const PREMAST_META_FILE = ".premast.json";
 // Files that are always client-specific and should NEVER be auto-updated
 const CLIENT_ONLY_FILES = new Set([
   "site.config.js",
-  "puck.config.js",
   "next.config.mjs",
   "theme/tokens.js",
   "theme/antd-theme.js",
@@ -65,6 +64,7 @@ const MANAGED_FILES = [
   "theme/ThemeRootVars.jsx",
   "app/antd-provider.jsx",
   ".gitignore",
+  "puck.config.js",
 ];
 
 /** Run a command asynchronously. */

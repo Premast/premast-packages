@@ -1,5 +1,10 @@
+import { Suspense } from "react";
 import { LoginPage } from "@premast/site-core/admin";
 
 export default function AdminLoginPage() {
-  return <LoginPage />;
+  return (
+    <Suspense>
+      <LoginPage />
+    </Suspense>
+  );
 }

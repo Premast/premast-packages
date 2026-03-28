@@ -15,6 +15,19 @@ const TEMPLATE_DIR = existsSync(resolve(__dirname, "../template"))
   ? resolve(__dirname, "../template")
   : resolve(__dirname, "../../templates/starter");
 
+// Read the current Premast version from site-core's package.json
+function getPremastVersion() {
+  try {
+    const corePkgPath = resolve(__dirname, "../../site-core/package.json");
+    if (existsSync(corePkgPath)) {
+      const corePkg = JSON.parse(readFileSync(corePkgPath, "utf-8"));
+      return `^${corePkg.version}`;
+    }
+  } catch { /* fallback */ }
+  return "^0.3.0";
+}
+const PREMAST_VERSION = getPremastVersion();
+
 /** Available plugins — add new ones here as they're created. */
 const AVAILABLE_PLUGINS = [
   {
@@ -24,6 +37,9 @@ const AVAILABLE_PLUGINS = [
     importName: "seoPlugin",
     importPath: "@premast/site-plugin-seo",
     configCall: "seoPlugin()",
+    serverImportPath: "@premast/site-plugin-seo/server",
+    serverImportName: "seoPluginServer",
+    pluginName: "seo",
   },
   // Future plugins:
   // {
@@ -154,7 +170,7 @@ async function main() {
         const relPath = join(monorepoRoot, "packages", packageDirMap[dep]);
         pkg.dependencies[dep] = `file:${relPath}`;
       } else {
-        pkg.dependencies[dep] = "^0.2.0";
+        pkg.dependencies[dep] = PREMAST_VERSION;
       }
     }
   }
@@ -167,7 +183,7 @@ async function main() {
           const relPath = join(monorepoRoot, "packages", "create-premast-site");
           pkg.devDependencies[dep] = `file:${relPath}`;
         } else {
-          pkg.devDependencies[dep] = "^0.2.0";
+          pkg.devDependencies[dep] = PREMAST_VERSION;
         }
       }
     }
@@ -197,6 +213,11 @@ async function main() {
   const siteConfig = generateSiteConfig(selectedPlugins, projectName);
   writeFileSync(siteConfigPath, siteConfig);
 
+  // 3b. Generate puck.config.js (client-safe mirror of site.config.js)
+  const puckConfigPath = join(projectDir, "puck.config.js");
+  const puckConfig = generatePuckConfig(selectedPlugins);
+  writeFileSync(puckConfigPath, puckConfig);
+
   // 4. Generate next.config.mjs with correct transpilePackages
   const nextConfigPath = join(projectDir, "next.config.mjs");
   const nextConfig = generateNextConfig(selectedPlugins);
@@ -220,7 +241,7 @@ async function main() {
 
   // 5b. Write .premast.json metadata (used by premast-update)
   const premastMeta = {
-    templateVersion: pkg.dependencies["@premast/site-core"]?.replace(/^\^/, "") || "0.2.0",
+    templateVersion: pkg.dependencies["@premast/site-core"]?.replace(/^\^/, "") || PREMAST_VERSION.replace(/^\^/, ""),
     createdAt: new Date().toISOString(),
     lastUpdate: null,
   };
@@ -325,16 +346,105 @@ function generateSiteConfig(selectedPlugins, projectName) {
     .replace(/[-_]/g, " ")
     .replace(/\b\w/g, (c) => c.toUpperCase());
 
+  // Build serverPlugins async loader
+  const serverPluginsWithImport = selectedPlugins.filter((pl) => pl.serverImportPath);
+  let serverPluginsSection = "";
+  if (serverPluginsWithImport.length > 0) {
+    const serverImports = serverPluginsWithImport.map(
+      (pl) => `    const { ${pl.serverImportName} } = await import("${pl.serverImportPath}");`,
+    );
+    const serverReturns = serverPluginsWithImport.map(
+      (pl) => `    { name: "${pl.pluginName}", ...${pl.serverImportName} },`,
+    );
+    serverPluginsSection = `
+  serverPlugins: async () => {
+${serverImports.join("\n")}
+    return [
+${serverReturns.join("\n")}
+    ];
+  },`;
+  }
+
   return `${imports.join("\n")}
 
 export const siteConfig = createSiteConfig({
   blocks: baseBlocks,
   categories: baseCategories,
-  plugins: [${pluginsArray}],
+  plugins: [${pluginsArray}],${serverPluginsSection}
   admin: {
     title: "${title} CMS",
   },
 });
+`;
+}
+
+function generatePuckConfig(selectedPlugins) {
+  const imports = [
+    'import { baseBlocks, baseCategories } from "@premast/site-blocks";',
+    'import { buildPuckConfig } from "@premast/site-core/puck";',
+  ];
+
+  const pluginInits = [];
+  const hasSeo = selectedPlugins.some((pl) => pl.value === "@premast/site-plugin-seo");
+
+  for (const plugin of selectedPlugins) {
+    imports.push(`import { ${plugin.importName} } from "${plugin.importPath}";`);
+    pluginInits.push(`  ${plugin.configCall},`);
+  }
+
+  // SEO custom field imports
+  let seoFieldSection = "";
+  if (hasSeo) {
+    imports.push('import { SeoScoreField } from "@/components/seo/SeoScoreField";');
+    imports.push('import { SearchIndexingField } from "@/components/seo/SearchIndexingField";');
+    seoFieldSection = `
+// Custom SEO field overrides (client-side enhanced fields)
+rootFields.noIndex = {
+  type: "custom",
+  label: "Search Indexing",
+  render: SearchIndexingField,
+};
+rootFields.seoScore = {
+  type: "custom",
+  label: "SEO Score",
+  render: SeoScoreField,
+};
+`;
+  }
+
+  const pluginsArray = pluginInits.length > 0 ? `\n${pluginInits.join("\n")}\n` : "";
+
+  return `/**
+ * Client-safe Puck config. Import this in "use client" components
+ * (editors) instead of site.config.js to avoid pulling mongoose
+ * into the browser bundle.
+ *
+ * AUTO-GENERATED by create-premast-site — do not edit manually.
+ * Changes here will be overwritten on \`npm run update\`.
+ */
+${imports.join("\n")}
+
+const plugins = [${pluginsArray}];
+
+// Merge root fields from all plugins
+const rootFields = {};
+for (const plugin of plugins) {
+  if (plugin.rootFields) Object.assign(rootFields, plugin.rootFields);
+}
+
+// Merge blocks from all plugins
+const allBlocks = { ...baseBlocks };
+for (const plugin of plugins) {
+  if (plugin.blocks) Object.assign(allBlocks, plugin.blocks);
+}
+
+// Merge categories from all plugins
+const allCategories = { ...baseCategories };
+for (const plugin of plugins) {
+  if (plugin.categories) Object.assign(allCategories, plugin.categories);
+}
+${seoFieldSection}
+export const puckConfig = buildPuckConfig(allBlocks, allCategories, {}, rootFields);
 `;
 }
 
@@ -350,10 +460,9 @@ import { createRequire } from "module";
 
 const require = createRequire(import.meta.url);
 
-// Alias antd so @premast packages share the client's single copy.
-// Do NOT alias react/react-dom — breaks Next.js edge middleware.
-const sharedDeps = ["antd", "@ant-design/icons"];
-const webpackAliases = Object.fromEntries(
+// Alias shared deps so @premast packages resolve the client's single copy.
+const sharedDeps = ["antd", "@ant-design/icons", "@puckeditor/core"];
+const aliases = Object.fromEntries(
   sharedDeps.map((dep) => [
     dep,
     resolve(dirname(require.resolve(\`\${dep}/package.json\`))),
@@ -366,9 +475,8 @@ const nextConfig = {
   transpilePackages: [
 ${packages.join("\n")}
   ],
-  turbopack: {},
   webpack(config) {
-    Object.assign(config.resolve.alias, webpackAliases);
+    Object.assign(config.resolve.alias, aliases);
     return config;
   },
 };

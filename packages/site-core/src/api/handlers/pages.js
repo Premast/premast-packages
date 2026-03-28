@@ -1,18 +1,23 @@
 import mongoose from "mongoose";
 
-export async function listPages(request, _params, { connectDB }) {
+export async function listPages(request, _params, { connectDB, session }) {
   await connectDB();
   const { Page } = (await import("../../db/models/Page.js"));
   const { searchParams } = new URL(request.url);
   const published = searchParams.get("published");
   const filter = {};
-  if (published === "true") filter.published = true;
-  if (published === "false") filter.published = false;
+  if (!session) {
+    // Unauthenticated: only published content
+    filter.published = true;
+  } else {
+    if (published === "true") filter.published = true;
+    if (published === "false") filter.published = false;
+  }
   const pages = await Page.find(filter).sort({ updatedAt: -1 }).lean();
   return Response.json({ data: pages });
 }
 
-export async function createPage(request, _params, { connectDB }) {
+export async function createPage(request, _params, { connectDB, hooks }) {
   await connectDB();
   const { Page } = (await import("../../db/models/Page.js"));
   const body = await request.json();
@@ -24,6 +29,14 @@ export async function createPage(request, _params, { connectDB }) {
     const page = await Page.create({
       title, slug, content: content ?? "", published: Boolean(published),
     });
+    // Run afterPageSave hooks
+    if (hooks?.afterPageSave) {
+      for (const { fn } of hooks.afterPageSave) {
+        try { await fn({ page: page.toObject(), action: "create" }); } catch (e) {
+          console.error("[premast] afterPageSave hook error:", e);
+        }
+      }
+    }
     return Response.json({ data: page }, { status: 201 });
   } catch (err) {
     if (err.code === 11000) {
@@ -33,18 +46,20 @@ export async function createPage(request, _params, { connectDB }) {
   }
 }
 
-export async function getPage(_request, params, { connectDB }) {
+export async function getPage(_request, params, { connectDB, session }) {
   if (!mongoose.isValidObjectId(params.id)) {
     return Response.json({ error: "invalid page id" }, { status: 400 });
   }
   await connectDB();
   const { Page } = (await import("../../db/models/Page.js"));
-  const page = await Page.findById(params.id).lean();
+  const filter = { _id: params.id };
+  if (!session) filter.published = true;
+  const page = await Page.findOne(filter).lean();
   if (!page) return Response.json({ error: "not found" }, { status: 404 });
   return Response.json({ data: page });
 }
 
-export async function patchPage(request, params, { connectDB }) {
+export async function patchPage(request, params, { connectDB, hooks }) {
   if (!mongoose.isValidObjectId(params.id)) {
     return Response.json({ error: "invalid page id" }, { status: 400 });
   }
@@ -72,6 +87,14 @@ export async function patchPage(request, params, { connectDB }) {
       params.id, { $set: update }, { new: true, runValidators: true },
     ).lean();
     if (!page) return Response.json({ error: "not found" }, { status: 404 });
+    // Run afterPageSave hooks
+    if (hooks?.afterPageSave) {
+      for (const { fn } of hooks.afterPageSave) {
+        try { await fn({ page, action: "update" }); } catch (e) {
+          console.error("[premast] afterPageSave hook error:", e);
+        }
+      }
+    }
     return Response.json({ data: page });
   } catch (err) {
     if (err.code === 11000) {

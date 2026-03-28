@@ -4,10 +4,8 @@ import { LoFiPanel, LoFiPlaceholder } from "@/components/ui";
 import styles from "./page.module.css";
 
 export const runtime = "nodejs";
-/** Avoid DB access during `next build` / static prerender; render on each request. */
 export const dynamic = "force-dynamic";
 
-/** Try to parse Puck JSON from page.content; returns null if not valid Puck data. */
 function parsePuckData(content) {
   if (!content) return null;
   try {
@@ -15,10 +13,49 @@ function parsePuckData(content) {
     if (parsed && typeof parsed === "object" && Array.isArray(parsed.content)) {
       return parsed;
     }
-  } catch {
-    /* not JSON — legacy plain text */
-  }
+  } catch { /* not valid Puck JSON */ }
   return null;
+}
+
+/** Extract SEO metadata from Puck root fields. */
+function extractSeoMetadata(puckData, fallbackTitle) {
+  const root = puckData?.root?.props || {};
+  const meta = { title: root.metaTitle || fallbackTitle || "Premast Site" };
+  if (root.metaDescription) meta.description = root.metaDescription;
+  if (root.noIndex === "true" || root.noIndex === true) {
+    meta.robots = { index: false, follow: false };
+  }
+  if (root.canonicalUrl) meta.alternates = { canonical: root.canonicalUrl };
+
+  const openGraph = {};
+  if (root.metaTitle) openGraph.title = root.metaTitle;
+  if (root.metaDescription) openGraph.description = root.metaDescription;
+  if (root.ogImage) openGraph.images = [{ url: root.ogImage }];
+  if (root.ogType) openGraph.type = root.ogType;
+  if (Object.keys(openGraph).length > 0) meta.openGraph = openGraph;
+
+  if (root.twitterCard) {
+    meta.twitter = { card: root.twitterCard };
+    if (root.metaTitle) meta.twitter.title = root.metaTitle;
+    if (root.metaDescription) meta.twitter.description = root.metaDescription;
+    if (root.ogImage) meta.twitter.images = [root.ogImage];
+  }
+  return meta;
+}
+
+export async function generateMetadata() {
+  try {
+    const connectDB = await siteConfig.getConnectDB();
+    await connectDB();
+    const models = await siteConfig.getModels();
+    const page = await models.Page.findOne({ slug: "home", published: true }).lean();
+    if (page) {
+      const puckData = parsePuckData(page.content);
+      if (puckData) return extractSeoMetadata(puckData, page.title);
+      return { title: page.title || "Home" };
+    }
+  } catch { /* DB offline */ }
+  return { title: "Premast Site", description: "Built with Premast CMS" };
 }
 
 export default async function Home() {
