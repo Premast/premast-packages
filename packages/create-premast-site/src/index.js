@@ -41,15 +41,14 @@ const AVAILABLE_PLUGINS = [
     serverImportName: "seoPluginServer",
     pluginName: "seo",
   },
-  // Future plugins:
-  // {
-  //   value: "@premast/site-plugin-stripe",
-  //   label: "Stripe Plugin",
-  //   hint: "Payment pages and components",
-  //   importName: "stripePlugin",
-  //   importPath: "@premast/site-plugin-stripe",
-  //   configCall: 'stripePlugin({ publishableKey: process.env.STRIPE_KEY })',
-  // },
+  {
+    value: "@premast/site-plugin-ui",
+    label: "UI Plugin",
+    hint: "Ant Design blocks: Flex, Grid, Card, Tabs, Carousel, etc.",
+    importName: "uiPlugin",
+    importPath: "@premast/site-plugin-ui",
+    configCall: "uiPlugin()",
+  },
 ];
 
 /** Run a command asynchronously so the spinner keeps animating. */
@@ -161,6 +160,7 @@ async function main() {
     "@premast/site-core": "site-core",
     "@premast/site-blocks": "site-blocks",
     "@premast/site-plugin-seo": "site-plugin-seo",
+    "@premast/site-plugin-ui": "site-plugin-ui",
   };
 
   for (const dep of Object.keys(pkg.dependencies)) {

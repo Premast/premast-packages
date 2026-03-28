@@ -1,6 +1,7 @@
 // Layout & sidebar
 export { AdminAppLayout } from "./components/AdminAppLayout.jsx";
 export { AdminSidebar } from "./components/AdminSidebar.jsx";
+export { AdminErrorBoundary } from "./components/AdminErrorBoundary.jsx";
 
 // Puck config context (client-safe)
 export { PuckConfigProvider, usePuckConfig } from "./PuckConfigContext.jsx";

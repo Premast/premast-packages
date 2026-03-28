@@ -12,6 +12,7 @@ premast-packages/
     site-core/              → @premast/site-core (DB, API, auth, admin, plugin system)
     site-blocks/            → @premast/site-blocks (Puck visual editor blocks)
     site-plugin-seo/        → @premast/site-plugin-seo (SEO fields, score analyzer)
+    site-plugin-ui/         → @premast/site-plugin-ui (Ant Design UI blocks: Flex, Grid, Card, Tabs, etc.)
     site-plugin-*/          → additional plugins
     create-premast-site/    → CLI to scaffold + update client sites
   templates/
@@ -118,10 +119,20 @@ src/
 
 ```
 src/
-  blocks/         → Puck block definitions (Hero, Text, Heading, Columns, etc.)
+  blocks/         → Puck block definitions (Hero, Content, Header, Footer, Heading, Text, Spacer, ArticleHero, ArticleBody, ArticleMeta)
   fields/         → Custom field components (RichTextField)
   styles/         → CSS Modules for blocks
   index.js        → Exports baseBlocks + baseCategories
+```
+
+### site-plugin-ui
+
+```
+src/
+  blocks/         → 14 Ant Design UI blocks (Flex, GridRow, Col, Divider, Tabs, Card, Accordion, Blockquote, List, Image, Carousel, Button, Breadcrumb, Steps)
+  client/         → "use client" wrappers for interactive Ant components
+  styles/         → CSS Modules for UI blocks
+  index.js        → Plugin factory: uiPlugin()
 ```
 
 ### site-plugin-seo
@@ -146,6 +157,7 @@ export function myPlugin(options = {}) {
     version: "1.0.0",        // optional semver
     blocks: {},               // Puck component definitions
     fields: {},               // Field injections into root fields
+    rootFields: {},           // Root-level page fields (e.g. SEO meta fields)
     categories: {},           // Puck editor categories
     adminPages: [],           // Admin sidebar items { key, label, icon, path, component }
     apiRoutes: [],            // API endpoints { path, method, handler }

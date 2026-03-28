@@ -1,11 +1,11 @@
 "use client";
 
 import { ReloadOutlined } from "@ant-design/icons";
-import { Button, Empty, Flex, Spin, Table, Tag, Typography, message } from "antd";
+import { Button, Empty, Flex, Spin, Switch, Table, Typography, message } from "antd";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 export function AdminGlobalView() {
   const router = useRouter();
@@ -35,6 +35,22 @@ export function AdminGlobalView() {
     router.push(`/admin/global/${key}`);
   };
 
+  const handleTogglePublished = async (key, published) => {
+    try {
+      const res = await fetch(`/api/globals/${key}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ published }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Update failed");
+      message.success(published ? "Published" : "Unpublished");
+      fetchGlobals();
+    } catch (e) {
+      message.error(e.message);
+    }
+  };
+
   const columns = [
     {
       title: "Element",
@@ -51,8 +67,15 @@ export function AdminGlobalView() {
       dataIndex: "published",
       key: "published",
       width: 110,
-      render: (v) =>
-        v ? <Tag color="processing">Live</Tag> : <Tag>Draft</Tag>,
+      render: (v, record) => (
+        <div onClick={(e) => e.stopPropagation()}>
+          <Switch
+            size="small"
+            checked={v}
+            onChange={(checked) => handleTogglePublished(record.key, checked)}
+          />
+        </div>
+      ),
     },
     {
       title: "Updated",
@@ -85,18 +108,21 @@ export function AdminGlobalView() {
       <Flex
         align="center"
         justify="space-between"
-        wrap="wrap"
-        gap={12}
-        style={{ marginBottom: 16 }}
+        style={{
+          height: 56,
+          padding: "0 24px",
+          borderBottom: "1px solid var(--ant-color-border-secondary, rgba(255,255,255,0.06))",
+          background: "var(--ant-color-bg-container, #141414)",
+          flexShrink: 0,
+        }}
       >
-        <Title level={4} style={{ margin: 0 }}>
-          Global Elements
-        </Title>
-        <Button icon={<ReloadOutlined />} onClick={fetchGlobals}>
+        <span style={{ fontSize: 14, fontWeight: 500 }}>Global Elements</span>
+        <Button size="small" icon={<ReloadOutlined />} onClick={fetchGlobals}>
           Refresh
         </Button>
       </Flex>
 
+      <div style={{ padding: 24 }}>
       <Spin spinning={loading}>
         {globals.length === 0 && !loading ? (
           <Empty
@@ -116,6 +142,7 @@ export function AdminGlobalView() {
           />
         )}
       </Spin>
+      </div>
     </div>
   );
 }

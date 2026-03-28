@@ -186,9 +186,9 @@ export async function updateUser(request, params, { connectDB, session }) {
   await connectDB();
   const { User } = await import("../../db/models/User.js");
   const body = await request.json();
-  const { name, role } = body;
+  const { name, role, password } = body;
 
-  if (params.id === session.sub) {
+  if (role && params.id === session.sub) {
     return Response.json({ error: "Cannot change your own role" }, { status: 400 });
   }
 
@@ -200,6 +200,12 @@ export async function updateUser(request, params, { connectDB, session }) {
       return Response.json({ error: "Invalid role" }, { status: 400 });
     }
     update.role = role;
+  }
+  if (password) {
+    if (password.length < 8) {
+      return Response.json({ error: "Password must be at least 8 characters" }, { status: 400 });
+    }
+    update.passwordHash = await hashPassword(password);
   }
 
   const user = await User.findByIdAndUpdate(params.id, update, { returnDocument: "after" }).lean();

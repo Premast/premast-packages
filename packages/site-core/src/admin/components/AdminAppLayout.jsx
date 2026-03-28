@@ -3,6 +3,7 @@
 import { ConfigProvider, Layout, theme as antdTheme } from "antd";
 import { Suspense, useMemo } from "react";
 import { AdminSidebar } from "./AdminSidebar.jsx";
+import { AdminErrorBoundary } from "./AdminErrorBoundary.jsx";
 import { defaultAdminTokens } from "../admin-theme.js";
 import { useOptionalSession } from "../../auth/useSession.js";
 
@@ -99,7 +100,9 @@ function AdminAppLayoutInner({ children, sidebarItems, title }) {
             fontFamily: token.fontFamily,
           }}
         >
-          {children}
+          <AdminErrorBoundary>
+            {children}
+          </AdminErrorBoundary>
         </Content>
       </Layout>
     </Layout>

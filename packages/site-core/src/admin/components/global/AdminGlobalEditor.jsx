@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Flex, Result, Skeleton, message } from "antd";
+import { Button, Flex, Result, Skeleton, Switch, message } from "antd";
 import { Puck } from "@puckeditor/core";
 import "@puckeditor/core/puck.css";
 import "../../../theme/css/puck-condensed.css";
@@ -35,6 +35,7 @@ function getInitialEditorData(content) {
 export function AdminGlobalEditor({ globalKey }) {
   const puckConfig = usePuckConfig();
   const [editorData, setEditorData] = useState(EMPTY_DATA);
+  const [published, setPublished] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -48,6 +49,7 @@ export function AdminGlobalEditor({ globalKey }) {
         const json = await res.json();
         if (!res.ok) throw new Error(json.error || "Failed to load global element");
         if (!active) return;
+        setPublished(json.data?.published ?? false);
         setEditorData(getInitialEditorData(json.data?.content ?? ""));
       } catch (e) {
         if (!active) return;
@@ -59,6 +61,22 @@ export function AdminGlobalEditor({ globalKey }) {
     loadGlobal();
     return () => { active = false; };
   }, [globalKey]);
+
+  const handleTogglePublished = async (checked) => {
+    try {
+      const res = await fetch(`/api/globals/${globalKey}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ published: checked }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Update failed");
+      setPublished(checked);
+      message.success(checked ? "Published" : "Unpublished");
+    } catch (e) {
+      message.error(e.message);
+    }
+  };
 
   const handlePublish = async (data) => {
     try {
@@ -111,6 +129,21 @@ export function AdminGlobalEditor({ globalKey }) {
           ui={{ leftSideBarVisible: false, rightSideBarWidth: 480 }}
           overrides={{
             fieldTypes: puckFieldOverrides, drawerItem: DrawerItemOverride, components: BlockSearchOverride,
+            headerActions: ({ children }) => (
+              <>
+                <Flex align="center" gap={8} style={{ marginRight: 8 }}>
+                  <span style={{ fontSize: 13, color: published ? undefined : "#888" }}>
+                    {published ? "Published" : "Draft"}
+                  </span>
+                  <Switch
+                    size="small"
+                    checked={published}
+                    onChange={handleTogglePublished}
+                  />
+                </Flex>
+                {children}
+              </>
+            ),
           }}
         />
       </div>
