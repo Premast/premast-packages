@@ -107,19 +107,20 @@
   text-transform: uppercase;
 }
 
-/* Block drawer items — tighter */
+/* Component list — 2-column grid within each category */
+.puck-theme [class*="ComponentList-content"] [class*="Drawer_"] {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+/* Block drawer items — compact for grid */
 .puck-theme [class*="DrawerItem"] {
-  margin-bottom: 2px;
+  margin-bottom: 0;
 }
 
 .puck-theme [class*="DrawerItem-draggable"] {
-  padding: 6px 10px;
-  font-size: 12px;
-}
-
-/* Component list — compact */
-.puck-theme [class*="ComponentList-item"] {
-  padding: 4px 8px;
+  padding: 8px 10px;
   font-size: 12px;
 }
 

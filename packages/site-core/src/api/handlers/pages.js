@@ -84,7 +84,7 @@ export async function patchPage(request, params, { connectDB, hooks }) {
   }
   try {
     const page = await Page.findByIdAndUpdate(
-      params.id, { $set: update }, { new: true, runValidators: true },
+      params.id, { $set: update }, { returnDocument: "after", runValidators: true },
     ).lean();
     if (!page) return Response.json({ error: "not found" }, { status: 404 });
     // Run afterPageSave hooks

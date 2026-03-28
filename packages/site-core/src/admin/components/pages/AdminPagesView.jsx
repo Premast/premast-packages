@@ -30,6 +30,45 @@ import { useCallback, useEffect, useState } from "react";
 
 const { Title, Text } = Typography;
 
+function getSeoScore(content) {
+  try {
+    const parsed = JSON.parse(content || "{}");
+    const root = parsed?.root?.props || {};
+    const checks = [
+      Boolean(root.metaTitle),
+      Boolean(root.metaDescription),
+      Boolean(root.ogImage),
+      root.noIndex !== "true" && root.noIndex !== true,
+    ];
+    return Math.round((checks.filter(Boolean).length / checks.length) * 100);
+  } catch {
+    return 0;
+  }
+}
+
+function SeoScoreBadge({ score }) {
+  const color = score >= 80 ? "#52c41a" : score >= 50 ? "#faad14" : "#ff4d4f";
+  const size = 18;
+  const r = (size / 2) - 2;
+  const circumference = 2 * Math.PI * r;
+  const arc = (score / 100) * circumference;
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+      <span style={{ fontSize: 11, fontWeight: 600, color }}>{score}</span>
+      <svg width={size} height={size} style={{ flexShrink: 0 }}>
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#353535" strokeWidth={2} />
+        <circle
+          cx={size/2} cy={size/2} r={r}
+          fill="none" stroke={color} strokeWidth={2}
+          strokeDasharray={`${arc} ${circumference}`}
+          strokeLinecap="round"
+          transform={`rotate(-90 ${size/2} ${size/2})`}
+        />
+      </svg>
+    </span>
+  );
+}
+
 export function AdminPagesView() {
   const router = useRouter();
   const [viewMode, setViewMode] = useState("table");
@@ -58,14 +97,42 @@ export function AdminPagesView() {
     fetchPages();
   }, [fetchPages]);
 
+  const [slugTouched, setSlugTouched] = useState(false);
+
+  const toSlug = (text) =>
+    text
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9\s-]/g, "")
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "");
+
   const openCreate = () => {
     form.resetFields();
     form.setFieldsValue({ published: false, content: "" });
+    setSlugTouched(false);
     setModalOpen(true);
   };
 
   const openEdit = (recordId) => {
     router.push(`/admin/pages/${recordId}`);
+  };
+
+  const handleTogglePublished = async (id, published) => {
+    try {
+      const res = await fetch(`/api/pages/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ published }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Update failed");
+      message.success(published ? "Page published" : "Page unpublished");
+      fetchPages();
+    } catch (e) {
+      message.error(e.message);
+    }
   };
 
   const handleDelete = async (id) => {
@@ -128,8 +195,21 @@ export function AdminPagesView() {
       dataIndex: "published",
       key: "published",
       width: 110,
-      render: (v) =>
-        v ? <Tag color="processing">Live</Tag> : <Tag>Draft</Tag>,
+      render: (v, record) => (
+        <div onClick={(e) => e.stopPropagation()}>
+          <Switch
+            size="small"
+            checked={v}
+            onChange={(checked) => handleTogglePublished(record._id, checked)}
+          />
+        </div>
+      ),
+    },
+    {
+      title: "SEO",
+      key: "seo",
+      width: 70,
+      render: (_, record) => <SeoScoreBadge score={getSeoScore(record.content)} />,
     },
     {
       title: "Updated",
@@ -172,15 +252,20 @@ export function AdminPagesView() {
       <Flex
         align="center"
         justify="space-between"
-        wrap="wrap"
-        gap={12}
-        style={{ marginBottom: 16 }}
+        style={{
+          height: 56,
+          padding: "0 24px",
+          borderBottom: "1px solid var(--ant-color-border-secondary, rgba(255,255,255,0.06))",
+          background: "var(--ant-color-bg-container, #141414)",
+          flexShrink: 0,
+        }}
       >
-        <Title level={4} style={{ margin: 0 }}>
+        <span style={{ fontSize: 14, fontWeight: 500 }}>
           Pages
-        </Title>
-        <Flex wrap="wrap" gap={8}>
+        </span>
+        <Flex gap={8} align="center">
           <Segmented
+            size="small"
             value={viewMode}
             onChange={setViewMode}
             options={[
@@ -202,15 +287,16 @@ export function AdminPagesView() {
               },
             ]}
           />
-          <Button icon={<ReloadOutlined />} onClick={fetchPages}>
+          <Button size="small" icon={<ReloadOutlined />} onClick={fetchPages}>
             Refresh
           </Button>
-          <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
+          <Button size="small" type="primary" icon={<PlusOutlined />} onClick={openCreate}>
             New page
           </Button>
         </Flex>
       </Flex>
 
+      <div style={{ padding: 24 }}>
       <Spin spinning={loading}>
         {pages.length === 0 && !loading ? (
           <Empty description="No pages yet" style={{ padding: "48px 0" }} />
@@ -278,6 +364,7 @@ export function AdminPagesView() {
           </Row>
         )}
       </Spin>
+      </div>
 
       <Modal
         title="New page"
@@ -294,15 +381,25 @@ export function AdminPagesView() {
             label="Title"
             rules={[{ required: true, message: "Required" }]}
           >
-            <Input placeholder="Page title" />
+            <Input
+              placeholder="Page title"
+              onChange={(e) => {
+                if (!slugTouched) {
+                  form.setFieldsValue({ slug: toSlug(e.target.value) });
+                }
+              }}
+            />
           </Form.Item>
           <Form.Item
             name="slug"
             label="Slug"
             rules={[{ required: true, message: "Required" }]}
-            extra="Lowercase letters, numbers, and hyphens (e.g. about-us)"
+            extra="Auto-generated from title. Edit to customize."
           >
-            <Input placeholder="about-us" />
+            <Input
+              placeholder="about-us"
+              onChange={() => setSlugTouched(true)}
+            />
           </Form.Item>
           <Form.Item name="content" label="Content">
             <Input.TextArea rows={6} placeholder="Body (optional)" />

@@ -33,7 +33,7 @@ export const seoPluginServer = {
 
   hooks: {
     afterDbConnect: async () => {
-      console.log("[seo-plugin] initialized");
+      // plugin ready
     },
   },
 };

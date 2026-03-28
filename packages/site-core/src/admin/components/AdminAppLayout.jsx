@@ -6,7 +6,7 @@ import { AdminSidebar } from "./AdminSidebar.jsx";
 import { defaultAdminTokens } from "../admin-theme.js";
 import { useOptionalSession } from "../../auth/useSession.js";
 
-const { Header, Content } = Layout;
+const { Content } = Layout;
 
 /**
  * Build the Ant Design theme config from admin tokens.
@@ -89,27 +89,11 @@ function AdminAppLayoutInner({ children, sidebarItems, title }) {
         <AdminSidebar sidebarItems={sidebarItems} title={title} session={session} />
       </Suspense>
       <Layout>
-        <Header
-          style={{
-            margin: 0,
-            height: headerHeight,
-            lineHeight: `${headerHeight}px`,
-            paddingInline: token.paddingLG,
-            background: token.colorBgContainer,
-            borderBottom: `1px solid ${token.colorBorderSecondary}`,
-            fontSize: token.fontSize,
-            fontWeight: 500,
-            color: token.colorText,
-            fontFamily: token.fontFamily,
-          }}
-        >
-          Admin
-        </Header>
         <Content
           style={{
             margin: 0,
             padding: 0,
-            minHeight: 280,
+            minHeight: "100vh",
             background: token.colorBgLayout ?? token.colorBgBase,
             color: token.colorText,
             fontFamily: token.fontFamily,

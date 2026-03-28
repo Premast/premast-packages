@@ -202,7 +202,7 @@ export async function updateUser(request, params, { connectDB, session }) {
     update.role = role;
   }
 
-  const user = await User.findByIdAndUpdate(params.id, update, { new: true }).lean();
+  const user = await User.findByIdAndUpdate(params.id, update, { returnDocument: "after" }).lean();
   if (!user) {
     return Response.json({ error: "User not found" }, { status: 404 });
   }

@@ -11,6 +11,7 @@ import {
   Popconfirm,
   Select,
   Spin,
+  Switch,
   Table,
   Tag,
   Typography,
@@ -20,6 +21,45 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 const { Title, Text } = Typography;
+
+function getSeoScore(content) {
+  try {
+    const parsed = JSON.parse(content || "{}");
+    const root = parsed?.root?.props || {};
+    const checks = [
+      Boolean(root.metaTitle),
+      Boolean(root.metaDescription),
+      Boolean(root.ogImage),
+      root.noIndex !== "true" && root.noIndex !== true,
+    ];
+    return Math.round((checks.filter(Boolean).length / checks.length) * 100);
+  } catch {
+    return 0;
+  }
+}
+
+function SeoScoreBadge({ score }) {
+  const color = score >= 80 ? "#52c41a" : score >= 50 ? "#faad14" : "#ff4d4f";
+  const size = 18;
+  const r = (size / 2) - 2;
+  const circumference = 2 * Math.PI * r;
+  const arc = (score / 100) * circumference;
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+      <span style={{ fontSize: 11, fontWeight: 600, color }}>{score}</span>
+      <svg width={size} height={size} style={{ flexShrink: 0 }}>
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#353535" strokeWidth={2} />
+        <circle
+          cx={size/2} cy={size/2} r={r}
+          fill="none" stroke={color} strokeWidth={2}
+          strokeDasharray={`${arc} ${circumference}`}
+          strokeLinecap="round"
+          transform={`rotate(-90 ${size/2} ${size/2})`}
+        />
+      </svg>
+    </span>
+  );
+}
 
 export function AdminContentView() {
   const router = useRouter();
@@ -73,6 +113,22 @@ export function AdminContentView() {
   };
 
   const openEdit = (id) => { router.push(`/admin/content/${id}`); };
+
+  const handleTogglePublished = async (id, published) => {
+    try {
+      const res = await fetch(`/api/content-items/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ published }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Update failed");
+      message.success(published ? "Content published" : "Content unpublished");
+      fetchItems();
+    } catch (e) {
+      message.error(e.message);
+    }
+  };
 
   const handleDelete = async (id) => {
     try {
@@ -160,8 +216,21 @@ export function AdminContentView() {
       dataIndex: "published",
       key: "published",
       width: 110,
-      render: (v) =>
-        v ? <Tag color="processing">Live</Tag> : <Tag>Draft</Tag>,
+      render: (v, record) => (
+        <div onClick={(e) => e.stopPropagation()}>
+          <Switch
+            size="small"
+            checked={v}
+            onChange={(checked) => handleTogglePublished(record._id, checked)}
+          />
+        </div>
+      ),
+    },
+    {
+      title: "SEO",
+      key: "seo",
+      width: 70,
+      render: (_, record) => <SeoScoreBadge score={getSeoScore(record.content)} />,
     },
     {
       title: "Updated",
@@ -200,17 +269,22 @@ export function AdminContentView() {
       <Flex
         align="center"
         justify="space-between"
-        wrap="wrap"
-        gap={12}
-        style={{ marginBottom: 16 }}
+        style={{
+          height: 56,
+          padding: "0 24px",
+          borderBottom: "1px solid var(--ant-color-border-secondary, rgba(255,255,255,0.06))",
+          background: "var(--ant-color-bg-container, #141414)",
+          flexShrink: 0,
+        }}
       >
-        <Title level={4} style={{ margin: 0 }}>
+        <span style={{ fontSize: 14, fontWeight: 500 }}>
           {filterType
             ? contentTypes.find((t) => t._id === filterType)?.name ?? "Content"
             : "All Content"}
-        </Title>
-        <Flex wrap="wrap" gap={8} align="center">
+        </span>
+        <Flex gap={8} align="center">
           <Select
+            size="small"
             placeholder="All types"
             allowClear
             value={filterType}
@@ -222,18 +296,19 @@ export function AdminContentView() {
                 router.replace("/admin/content", { scroll: false });
               }
             }}
-            style={{ minWidth: 160 }}
+            style={{ minWidth: 140 }}
             options={contentTypes.map((t) => ({ label: t.name, value: t._id }))}
           />
-          <Button icon={<ReloadOutlined />} onClick={fetchItems}>
+          <Button size="small" icon={<ReloadOutlined />} onClick={fetchItems}>
             Refresh
           </Button>
-          <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
+          <Button size="small" type="primary" icon={<PlusOutlined />} onClick={openCreate}>
             New content
           </Button>
         </Flex>
       </Flex>
 
+      <div style={{ padding: 24 }}>
       <Spin spinning={loading}>
         {items.length === 0 && !loading ? (
           <Empty description="No content yet" style={{ padding: "48px 0" }} />
@@ -251,6 +326,7 @@ export function AdminContentView() {
           />
         )}
       </Spin>
+      </div>
 
       <Modal
         title="New content"

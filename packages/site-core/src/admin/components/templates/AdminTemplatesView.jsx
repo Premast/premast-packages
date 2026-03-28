@@ -10,6 +10,7 @@ import {
   Modal,
   Popconfirm,
   Spin,
+  Switch,
   Table,
   Tag,
   Typography,
@@ -47,13 +48,43 @@ export function AdminTemplatesView() {
     fetchTypes();
   }, [fetchTypes]);
 
+  const [slugTouched, setSlugTouched] = useState(false);
+  const [prefixTouched, setPrefixTouched] = useState(false);
+
+  const toSlug = (text) =>
+    text
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9\s-]/g, "")
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "");
+
   const openCreate = () => {
     form.resetFields();
+    setSlugTouched(false);
+    setPrefixTouched(false);
     setModalOpen(true);
   };
 
   const openEdit = (id) => {
     router.push(`/admin/templates/${id}`);
+  };
+
+  const handleTogglePublished = async (id, published) => {
+    try {
+      const res = await fetch(`/api/content-types/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ published }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Update failed");
+      message.success(published ? "Template published" : "Template unpublished");
+      fetchTypes();
+    } catch (e) {
+      message.error(e.message);
+    }
   };
 
   const handleDelete = async (id) => {
@@ -112,8 +143,15 @@ export function AdminTemplatesView() {
       dataIndex: "published",
       key: "published",
       width: 110,
-      render: (v) =>
-        v ? <Tag color="processing">Live</Tag> : <Tag>Draft</Tag>,
+      render: (v, record) => (
+        <div onClick={(e) => e.stopPropagation()}>
+          <Switch
+            size="small"
+            checked={v}
+            onChange={(checked) => handleTogglePublished(record._id, checked)}
+          />
+        </div>
+      ),
     },
     {
       title: "Updated",
@@ -152,23 +190,28 @@ export function AdminTemplatesView() {
       <Flex
         align="center"
         justify="space-between"
-        wrap="wrap"
-        gap={12}
-        style={{ marginBottom: 16 }}
+        style={{
+          height: 56,
+          padding: "0 24px",
+          borderBottom: "1px solid var(--ant-color-border-secondary, rgba(255,255,255,0.06))",
+          background: "var(--ant-color-bg-container, #141414)",
+          flexShrink: 0,
+        }}
       >
-        <Title level={4} style={{ margin: 0 }}>
+        <span style={{ fontSize: 14, fontWeight: 500 }}>
           Templates
-        </Title>
-        <Flex wrap="wrap" gap={8}>
-          <Button icon={<ReloadOutlined />} onClick={fetchTypes}>
+        </span>
+        <Flex gap={8} align="center">
+          <Button size="small" icon={<ReloadOutlined />} onClick={fetchTypes}>
             Refresh
           </Button>
-          <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
+          <Button size="small" type="primary" icon={<PlusOutlined />} onClick={openCreate}>
             New template
           </Button>
         </Flex>
       </Flex>
 
+      <div style={{ padding: 24 }}>
       <Spin spinning={loading}>
         {types.length === 0 && !loading ? (
           <Empty description="No templates yet" style={{ padding: "48px 0" }} />
@@ -185,6 +228,7 @@ export function AdminTemplatesView() {
           />
         )}
       </Spin>
+      </div>
 
       <Modal
         title="New template"
@@ -201,15 +245,22 @@ export function AdminTemplatesView() {
             label="Name"
             rules={[{ required: true, message: "Required" }]}
           >
-            <Input placeholder="Blog Article" />
+            <Input
+              placeholder="Blog Article"
+              onChange={(e) => {
+                const slug = toSlug(e.target.value);
+                if (!slugTouched) form.setFieldsValue({ slug });
+                if (!prefixTouched) form.setFieldsValue({ urlPrefix: slug ? `/${slug}` : "" });
+              }}
+            />
           </Form.Item>
           <Form.Item
             name="slug"
             label="Slug"
             rules={[{ required: true, message: "Required" }]}
-            extra="Lowercase, hyphens (e.g. blog-article)"
+            extra="Auto-generated from name. Edit to customize."
           >
-            <Input placeholder="blog-article" />
+            <Input placeholder="blog-article" onChange={() => setSlugTouched(true)} />
           </Form.Item>
           <Form.Item
             name="urlPrefix"
@@ -218,9 +269,9 @@ export function AdminTemplatesView() {
               { required: true, message: "Required" },
               { pattern: /^\/[a-z0-9]+(?:[/-][a-z0-9]+)*$/, message: "Must start with / and contain only lowercase letters, numbers, hyphens (e.g. /blog)" },
             ]}
-            extra="Public URL path prefix (e.g. /blog)"
+            extra="Auto-generated from name. Edit to customize."
           >
-            <Input placeholder="/blog" />
+            <Input placeholder="/blog" onChange={() => setPrefixTouched(true)} />
           </Form.Item>
           <Form.Item name="description" label="Description">
             <Input.TextArea rows={2} placeholder="Optional description" />

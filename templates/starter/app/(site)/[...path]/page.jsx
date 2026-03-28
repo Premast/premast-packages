@@ -111,9 +111,7 @@ export default async function ContentCatchAllPage({ params }) {
 
         if (!item) return notFound();
 
-        const puckData = parsePuckData(item.content);
-        if (!puckData) return notFound();
-
+        const puckData = parsePuckData(item.content) ?? { root: {}, content: [] };
         const finalData = await siteConfig.runBeforePageRender(puckData, item);
         return (
           <article>
@@ -132,9 +130,7 @@ export default async function ContentCatchAllPage({ params }) {
       }).lean();
 
       if (page) {
-        const puckData = parsePuckData(page.content);
-        if (!puckData) return notFound();
-
+        const puckData = parsePuckData(page.content) ?? { root: {}, content: [] };
         const finalData = await siteConfig.runBeforePageRender(puckData, page);
         return (
           <article>

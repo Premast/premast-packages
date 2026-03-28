@@ -1,6 +1,6 @@
 {
   "name": "@premast/site-blocks",
-  "version": "0.4.3",
+  "version": "0.5.0",
   "type": "module",
   "main": "./src/index.js",
   "exports": {

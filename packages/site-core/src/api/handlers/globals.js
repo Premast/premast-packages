@@ -47,7 +47,7 @@ export async function patchGlobal(request, params, { connectDB }) {
     return Response.json({ error: "no valid fields to update" }, { status: 400 });
   }
   const doc = await Global.findOneAndUpdate(
-    { key: params.key }, { $set: update }, { new: true, runValidators: true },
+    { key: params.key }, { $set: update }, { returnDocument: "after", runValidators: true },
   ).lean();
   if (!doc) return Response.json({ error: "not found" }, { status: 404 });
   return Response.json({ data: doc });

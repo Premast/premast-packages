@@ -1,12 +1,12 @@
 "use client";
 
-import { Button, Flex, Result, Skeleton, message } from "antd";
+import { Button, Flex, Result, Skeleton, Switch, message } from "antd";
 import { Puck } from "@puckeditor/core";
 import "@puckeditor/core/puck.css";
 import "../../../theme/css/puck-condensed.css";
 import { useEffect, useState } from "react";
 import styles from "./AdminContentEditor.module.css";
-import { puckFieldOverrides } from "../../../puck/build-config.js";
+import { puckFieldOverrides, DrawerItemOverride } from "../../../puck/build-config.js";
 import { usePuckConfig } from "../../PuckConfigContext.jsx";
 
 const EMPTY_DATA = { content: [], root: {} };
@@ -35,6 +35,7 @@ function getInitialEditorData(content) {
 export function AdminContentEditor({ contentId }) {
   const puckConfig = usePuckConfig();
   const [editorData, setEditorData] = useState(EMPTY_DATA);
+  const [published, setPublished] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -48,6 +49,7 @@ export function AdminContentEditor({ contentId }) {
         const json = await res.json();
         if (!res.ok) throw new Error(json.error || "Failed to load content");
         if (!active) return;
+        setPublished(json.data?.published ?? false);
         setEditorData(getInitialEditorData(json.data?.content ?? ""));
       } catch (e) {
         if (!active) return;
@@ -59,6 +61,22 @@ export function AdminContentEditor({ contentId }) {
     loadContent();
     return () => { active = false; };
   }, [contentId]);
+
+  const handleTogglePublished = async (checked) => {
+    try {
+      const res = await fetch(`/api/content-items/${contentId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ published: checked }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Update failed");
+      setPublished(checked);
+      message.success(checked ? "Content published" : "Content unpublished");
+    } catch (e) {
+      message.error(e.message);
+    }
+  };
 
   const handlePublish = async (data) => {
     try {
@@ -109,7 +127,24 @@ export function AdminContentEditor({ contentId }) {
           data={editorData}
           onPublish={handlePublish}
           ui={{ leftSideBarVisible: false, rightSideBarWidth: 480 }}
-          overrides={{ fieldTypes: puckFieldOverrides }}
+          overrides={{
+            fieldTypes: puckFieldOverrides, drawerItem: DrawerItemOverride,
+            headerActions: ({ children }) => (
+              <>
+                <Flex align="center" gap={8} style={{ marginRight: 8 }}>
+                  <span style={{ fontSize: 13, color: published ? undefined : "#888" }}>
+                    {published ? "Published" : "Draft"}
+                  </span>
+                  <Switch
+                    size="small"
+                    checked={published}
+                    onChange={handleTogglePublished}
+                  />
+                </Flex>
+                {children}
+              </>
+            ),
+          }}
         />
       </div>
     </Flex>

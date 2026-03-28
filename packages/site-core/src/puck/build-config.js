@@ -1,4 +1,4 @@
-export { puckFieldOverrides } from "./PuckFieldOverrides.jsx";
+export { puckFieldOverrides, DrawerItemOverride } from "./PuckFieldOverrides.jsx";
 
 export function buildPuckConfig(blocks, categories = {}, fieldInjections = {}, rootFields = {}) {
   const components = {};

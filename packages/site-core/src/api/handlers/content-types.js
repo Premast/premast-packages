@@ -74,7 +74,7 @@ export async function patchContentType(request, params, { connectDB }) {
   }
   try {
     const doc = await ContentType.findByIdAndUpdate(
-      params.id, { $set: update }, { new: true, runValidators: true },
+      params.id, { $set: update }, { returnDocument: "after", runValidators: true },
     ).lean();
     if (!doc) return Response.json({ error: "not found" }, { status: 404 });
     return Response.json({ data: doc });

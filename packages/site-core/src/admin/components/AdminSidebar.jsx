@@ -76,16 +76,13 @@ export function AdminSidebar({ sidebarItems = [], title = "CMS", session }) {
 
    useEffect(() => {
       fetchContentTypes();
-   }, [fetchContentTypes]);
+   }, [fetchContentTypes, pathname]);
 
    const menuItems = buildMenuItems(sidebarItems, userRole, contentTypes);
 
    // Build selected key — if on /admin/content with ?type= param, use full path+query
    const typeParam = searchParams.get("type");
-   const selectedKey =
-      pathname === "/admin/content" && typeParam
-         ? `/admin/content?type=${typeParam}`
-         : pathname;
+   const selectedKey = pathname === "/admin/content" && typeParam ? `/admin/content?type=${typeParam}` : pathname;
 
    async function handleLogout() {
       await fetch("/api/auth/logout", { method: "POST" });
@@ -101,10 +98,13 @@ export function AdminSidebar({ sidebarItems = [], title = "CMS", session }) {
          style={{
             fontFamily: token.fontFamily,
             borderRight: `1px solid ${token.colorBorderSecondary}`,
-            display: "flex",
-            flexDirection: "column",
+            height: "100vh",
+            position: "sticky",
+            top: 0,
+            overflow: "hidden",
          }}
       >
+         <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
          <div
             style={{
                padding: "0 16px",
@@ -125,7 +125,7 @@ export function AdminSidebar({ sidebarItems = [], title = "CMS", session }) {
             mode="inline"
             selectedKeys={[selectedKey]}
             defaultOpenKeys={["content-nav"]}
-            style={{ borderInlineEnd: "none", fontFamily: token.fontFamily, flex: 1 }}
+            style={{ borderInlineEnd: "none", fontFamily: token.fontFamily, flex: 1, overflowY: "auto" }}
             items={menuItems}
          />
 
@@ -184,6 +184,7 @@ export function AdminSidebar({ sidebarItems = [], title = "CMS", session }) {
             }}
          >
             Developed by Premastlab
+         </div>
          </div>
       </Sider>
    );
