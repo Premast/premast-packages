@@ -1,6 +1,6 @@
-import { AdminAppLayout, AuthWrapper, PuckConfigProvider } from "@premast/site-core/admin";
+import { AdminAppLayout, AuthWrapper } from "@premast/site-core/admin";
 import { siteConfig } from "@/site.config";
-import { puckConfig } from "@/puck.config";
+import { PuckProvider } from "./PuckProvider";
 import "@/theme/puck.css";
 
 // Strip `component` from sidebar items before passing to client components.
@@ -16,7 +16,7 @@ function stripComponents(items) {
 export default function DashboardLayout({ children }) {
   return (
     <AuthWrapper>
-      <PuckConfigProvider puckConfig={puckConfig}>
+      <PuckProvider>
         <AdminAppLayout
           sidebarItems={stripComponents(siteConfig.adminSidebarItems)}
           adminTokens={siteConfig.adminTokens}
@@ -24,7 +24,7 @@ export default function DashboardLayout({ children }) {
         >
           {children}
         </AdminAppLayout>
-      </PuckConfigProvider>
+      </PuckProvider>
     </AuthWrapper>
   );
 }

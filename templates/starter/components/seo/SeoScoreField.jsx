@@ -80,10 +80,18 @@ function CheckItem({ label, status }) {
   );
 }
 
+function usePuckSafe() {
+  try {
+    return usePuck();
+  } catch {
+    return null;
+  }
+}
+
 export function SeoScoreField() {
-  const { appState } = usePuck();
-  const rootProps = appState?.data?.root?.props || {};
-  const contentBlocks = appState?.data?.content || [];
+  const puck = usePuckSafe();
+  const rootProps = puck?.appState?.data?.root?.props || {};
+  const contentBlocks = puck?.appState?.data?.content || [];
 
   const { totalScore, checks } = useMemo(
     () => analyzeSeo(rootProps, contentBlocks),
