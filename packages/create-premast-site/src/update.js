@@ -26,6 +26,7 @@ const PREMAST_META_FILE = ".premast.json";
 const CLIENT_ONLY_FILES = new Set([
   "site.config.js",
   "puck.config.js",
+  "next.config.mjs",
   "theme/tokens.js",
   "theme/antd-theme.js",
   "components/layout/Header.jsx",
@@ -40,7 +41,6 @@ const CLIENT_ONLY_FILES = new Set([
 
 // Files that should be compared and optionally updated
 const MANAGED_FILES = [
-  "next.config.mjs",
   "middleware.js",
   "jsconfig.json",
   "app/layout.jsx",
@@ -54,11 +54,8 @@ const MANAGED_FILES = [
   "app/admin/setup/layout.jsx",
   "app/admin/(dashboard)/layout.jsx",
   "app/admin/(dashboard)/page.jsx",
-  "app/admin/(dashboard)/[...plugin]/page.jsx",
+  "app/admin/(dashboard)/[...path]/page.jsx",
   "app/api/[...route]/route.js",
-  "components/admin/AdminAppLayout.jsx",
-  "components/admin/AdminSidebar.jsx",
-  "components/admin/pages/AdminPagesView.jsx",
   "components/puck/PuckFieldOverrides.jsx",
   "components/seo/SearchIndexingField.jsx",
   "components/seo/SeoScoreField.jsx",
@@ -66,6 +63,7 @@ const MANAGED_FILES = [
   "theme/puck.css",
   "theme/ThemeRootVars.jsx",
   "app/antd-provider.jsx",
+  ".gitignore",
 ];
 
 /** Run a command asynchronously. */

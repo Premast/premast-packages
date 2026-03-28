@@ -27,13 +27,12 @@ This is a **Premast CMS client site** — a Next.js application powered by share
 │   │   └── [...path]/      ← Dynamic content item routes
 │   ├── admin/
 │   │   ├── layout.jsx      ← Admin shell layout
-│   │   ├── login/          ← Login page
-│   │   ├── setup/          ← First-time admin setup
-│   │   └── (dashboard)/    ← Protected admin pages (pages, content, etc.)
+│   │   ├── login/          ← Login page (thin wrapper, imports from site-core)
+│   │   ├── setup/          ← First-time admin setup (thin wrapper)
+│   │   └── (dashboard)/    ← Catch-all route delegates to site-core
 │   └── api/
 │       └── [...route]/     ← Single catch-all → siteConfig.apiRouteHandlers
 ├── components/
-│   ├── admin/              ← Admin shell (AdminAppLayout, AdminSidebar)
 │   ├── layout/             ← Header.jsx, Footer.jsx
 │   ├── puck/               ← Client-specific Puck blocks
 │   └── seo/                ← SEO field components

@@ -51,8 +51,27 @@ function runCommand(cmd, args, cwd) {
 }
 
 async function main() {
+  const args = process.argv.slice(2);
+  const isDevMode = args.includes("--dev");
+
+  // --dev: resolve the monorepo root so we can create file: links
+  let monorepoRoot = null;
+  if (isDevMode) {
+    // CLI source lives at premast-packages/packages/create-premast-site/src/index.js
+    monorepoRoot = resolve(__dirname, "../../..");
+    if (!existsSync(join(monorepoRoot, "packages/site-core"))) {
+      // Fallback: maybe running from node_modules, try finding it
+      monorepoRoot = null;
+    }
+    if (!monorepoRoot) {
+      console.error(pc.red("--dev requires running from the premast-packages monorepo source."));
+      console.error(pc.dim("Usage: node packages/create-premast-site/src/index.js --dev"));
+      process.exit(1);
+    }
+  }
+
   console.log();
-  p.intro(pc.bgCyan(pc.black(" create-premast-site ")));
+  p.intro(pc.bgCyan(pc.black(isDevMode ? " create-premast-site (dev mode) " : " create-premast-site ")));
 
   const project = await p.group(
     {
@@ -121,10 +140,36 @@ async function main() {
 
   pkg.name = projectName;
 
-  // Replace workspace:* with ^0.2.0 for standalone projects
+  // Replace workspace:* with published versions or file: links
+  const packageDirMap = {
+    "@premast/site-core": "site-core",
+    "@premast/site-blocks": "site-blocks",
+    "@premast/site-plugin-seo": "site-plugin-seo",
+  };
+
   for (const dep of Object.keys(pkg.dependencies)) {
     if (pkg.dependencies[dep] === "workspace:*") {
-      pkg.dependencies[dep] = "^0.2.0";
+      if (isDevMode && monorepoRoot && packageDirMap[dep]) {
+        // Use relative file: link to monorepo package
+        const relPath = join(monorepoRoot, "packages", packageDirMap[dep]);
+        pkg.dependencies[dep] = `file:${relPath}`;
+      } else {
+        pkg.dependencies[dep] = "^0.2.0";
+      }
+    }
+  }
+
+  // Replace workspace:* in devDependencies too
+  if (pkg.devDependencies) {
+    for (const dep of Object.keys(pkg.devDependencies)) {
+      if (pkg.devDependencies[dep] === "workspace:*") {
+        if (isDevMode && monorepoRoot && dep === "@premast/create-premast-site") {
+          const relPath = join(monorepoRoot, "packages", "create-premast-site");
+          pkg.devDependencies[dep] = `file:${relPath}`;
+        } else {
+          pkg.devDependencies[dep] = "^0.2.0";
+        }
+      }
     }
   }
 
@@ -137,7 +182,12 @@ async function main() {
 
   // Add selected plugin dependencies
   for (const plugin of selectedPlugins) {
-    pkg.dependencies[plugin.value] = "^0.2.0";
+    if (isDevMode && monorepoRoot && packageDirMap[plugin.value]) {
+      const relPath = join(monorepoRoot, "packages", packageDirMap[plugin.value]);
+      pkg.dependencies[plugin.value] = `file:${relPath}`;
+    } else {
+      pkg.dependencies[plugin.value] = "^0.2.0";
+    }
   }
 
   writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + "\n");
@@ -183,6 +233,18 @@ async function main() {
 
   // 6. Install dependencies
   const packageManager = detectPackageManager();
+
+  // Check if GITHUB_TOKEN is available (needed for @premast packages on GitHub Packages)
+  // In dev mode, packages use file: links so no token is needed.
+  if (!isDevMode && !process.env.GITHUB_TOKEN) {
+    p.log.warn(
+      pc.yellow("GITHUB_TOKEN is not set. ") +
+      "It's required to install @premast packages from GitHub Packages.\n" +
+      pc.dim("  Set it with: export GITHUB_TOKEN=ghp_your_token_here\n") +
+      pc.dim("  Or add it to the .npmrc file in the project.")
+    );
+  }
+
   s.start(`Installing dependencies with ${packageManager}... ${pc.dim("(this may take a minute)")}`);
 
   try {
@@ -204,6 +266,19 @@ async function main() {
   }
 
   // Done
+  const devNote = isDevMode
+    ? [
+        "",
+        pc.yellow("# DEV MODE — using local file: links"),
+        "# Changes in premast-packages are picked up by HMR.",
+        "# Must use --webpack (already set in dev script).",
+      ]
+    : [
+        "",
+        "# To update Premast packages later:",
+        `${packageManager === "npm" ? "npm run" : packageManager} update`,
+      ];
+
   p.note(
     [
       `cd ${projectName}`,
@@ -220,9 +295,7 @@ async function main() {
       "",
       "# Create your first admin account at:",
       "# http://localhost:3000/admin/setup",
-      "",
-      "# To update Premast packages later:",
-      `${packageManager === "npm" ? "npm run" : packageManager} update`,
+      ...devNote,
     ].join("\n"),
     "Next steps",
   );

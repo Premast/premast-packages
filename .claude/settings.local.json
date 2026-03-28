@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__Desktop_Commander__read_multiple_files",
+      "Bash(npm pkg:*)",
+      "Bash(npm install:*)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(xargs kill:*)",
+      "Bash(cat '/Users/momenelshamy/playground/premast-packages/templates/starter/app/admin/\\(dashboard\\)/[...path]/page.jsx')"
+    ]
+  }
+}

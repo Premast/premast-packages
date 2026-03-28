@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "pmst-website",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["next", "dev", "/Users/momenelshamy/playground/pmst-website"],
+      "port": 3000,
+      "autoPort": false
+    }
+  ]
+}
