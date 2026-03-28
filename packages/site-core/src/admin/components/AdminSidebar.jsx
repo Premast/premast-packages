@@ -107,13 +107,15 @@ export function AdminSidebar({ sidebarItems = [], title = "CMS", session }) {
       >
          <div
             style={{
-               padding: `${token.paddingSM}px ${token.padding}px ${token.paddingXS}px`,
+               padding: "0 16px",
                color: token.colorText,
                fontWeight: 600,
-               fontSize: token.fontSize,
+               fontSize: 14,
                letterSpacing: "0.02em",
                borderBottom: `1px solid ${token.colorBorderSecondary}`,
-               height: "55px",
+               height: 55,
+               display: "flex",
+               alignItems: "center",
             }}
          >
             {title}
@@ -130,25 +132,39 @@ export function AdminSidebar({ sidebarItems = [], title = "CMS", session }) {
          {session && (
             <div
                style={{
-                  padding: `${token.paddingXS}px ${token.padding}px`,
+                  padding: "10px 16px",
                   borderTop: `1px solid ${token.colorBorderSecondary}`,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
-                  gap: 8,
                }}
             >
-               <span
-                  style={{
-                     color: token.colorTextSecondary,
-                     fontSize: 12,
-                     overflow: "hidden",
-                     textOverflow: "ellipsis",
-                     whiteSpace: "nowrap",
-                  }}
-               >
-                  {session.name || session.email}
-               </span>
+               <div style={{ overflow: "hidden", minWidth: 0 }}>
+                  {session.name && (
+                     <div
+                        style={{
+                           color: token.colorTextSecondary,
+                           fontSize: 12,
+                           overflow: "hidden",
+                           textOverflow: "ellipsis",
+                           whiteSpace: "nowrap",
+                        }}
+                     >
+                        {session.name}
+                     </div>
+                  )}
+                  <div
+                     style={{
+                        color: token.colorTextSecondary,
+                        fontSize: 12,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                     }}
+                  >
+                     {session.email}
+                  </div>
+               </div>
                <Button
                   type="text"
                   size="small"
