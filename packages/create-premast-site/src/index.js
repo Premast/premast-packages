@@ -15,16 +15,25 @@ const TEMPLATE_DIR = existsSync(resolve(__dirname, "../template"))
   ? resolve(__dirname, "../template")
   : resolve(__dirname, "../../templates/starter");
 
-// Read the current Premast version from site-core's package.json
+// Read the current Premast version — all packages share the same version
 function getPremastVersion() {
   try {
+    // Try site-core first (monorepo dev)
     const corePkgPath = resolve(__dirname, "../../site-core/package.json");
     if (existsSync(corePkgPath)) {
       const corePkg = JSON.parse(readFileSync(corePkgPath, "utf-8"));
       return `^${corePkg.version}`;
     }
   } catch { /* fallback */ }
-  return "^0.3.0";
+  try {
+    // Fall back to own package.json (installed from registry)
+    const ownPkgPath = resolve(__dirname, "../package.json");
+    if (existsSync(ownPkgPath)) {
+      const ownPkg = JSON.parse(readFileSync(ownPkgPath, "utf-8"));
+      return `^${ownPkg.version}`;
+    }
+  } catch { /* fallback */ }
+  return "^1.0.0";
 }
 const PREMAST_VERSION = getPremastVersion();
 
@@ -255,16 +264,7 @@ async function main() {
   // 6. Install dependencies
   const packageManager = detectPackageManager();
 
-  // Check if GITHUB_TOKEN is available (needed for @premast packages on GitHub Packages)
-  // In dev mode, packages use file: links so no token is needed.
-  if (!isDevMode && !process.env.GITHUB_TOKEN) {
-    p.log.warn(
-      pc.yellow("GITHUB_TOKEN is not set. ") +
-      "It's required to install @premast packages from GitHub Packages.\n" +
-      pc.dim("  Set it with: export GITHUB_TOKEN=ghp_your_token_here\n") +
-      pc.dim("  Or add it to the .npmrc file in the project.")
-    );
-  }
+  // Packages are public on GitHub Packages — no token needed for install.
 
   s.start(`Installing dependencies with ${packageManager}... ${pc.dim("(this may take a minute)")}`);
 
