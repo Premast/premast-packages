@@ -69,22 +69,10 @@ Then visit [http://localhost:3000/admin](http://localhost:3000/admin) to log in.
 ## 7. Add Plugins
 
 ```bash
-npm install @premast/site-plugin-seo
+npm run add-plugin
 ```
 
-Then in `site.config.js`:
-
-```js
-import { seoPlugin } from "@premast/site-plugin-seo";
-
-export const siteConfig = createSiteConfig({
-  blocks: baseBlocks,
-  categories: baseCategories,
-  plugins: [seoPlugin()],
-});
-```
-
-Don't forget to add the plugin to `transpilePackages` in `next.config.mjs`.
+This interactive command lets you select a plugin and automatically updates all config files (`package.json`, `site.config.js`, `puck.config.js`, `next.config.mjs`) and installs dependencies.
 
 ## 8. Update Premast
 

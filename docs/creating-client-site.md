@@ -157,17 +157,23 @@ export const siteConfig = createSiteConfig({
 });
 ```
 
-### Add or remove plugins
+### Add plugins
 
 ```bash
-# Add a plugin
-pnpm add @premast/site-plugin-stripe
-
-# Remove a plugin
-pnpm remove @premast/site-plugin-seo
+npm run add-plugin
 ```
 
-Then update `site.config.js` imports accordingly.
+Select from available plugins — the command automatically updates `package.json`, `site.config.js`, `puck.config.js`, `next.config.mjs`, and installs dependencies.
+
+### Remove a plugin
+
+Remove the dependency and its imports from config files manually:
+
+```bash
+npm remove @premast/site-plugin-xyz
+```
+
+Then remove the import and `xyzPlugin()` from `site.config.js`, `puck.config.js`, and `next.config.mjs`.
 
 ---
 

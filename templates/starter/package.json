@@ -7,7 +7,8 @@
     "dev": "next dev --webpack",
     "build": "next build --webpack",
     "start": "next start",
-    "update": "premast-update"
+    "update": "premast-update",
+    "add-plugin": "premast-add-plugin"
   },
   "dependencies": {
     "@premast/site-core": "workspace:*",

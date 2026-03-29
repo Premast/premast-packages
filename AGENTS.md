@@ -13,7 +13,7 @@ premast-packages/
     site-plugin-seo/        → @premast/site-plugin-seo (SEO fields, score analyzer)
     site-plugin-ui/         → @premast/site-plugin-ui (Ant Design UI blocks: Flex, Grid, Card, Tabs, etc.)
     site-plugin-*/          → additional plugins
-    create-premast-site/    → CLI to scaffold + update client sites
+    create-premast-site/    → CLI to scaffold, update, and add plugins to client sites
   templates/
     starter/                → Template copied by create-premast-site CLI
       components/blocks/    → Base Puck blocks (Hero, Header, Footer, etc.) — local to each site

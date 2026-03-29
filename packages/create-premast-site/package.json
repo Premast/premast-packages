@@ -1,11 +1,12 @@
 {
   "name": "@premast/create-premast-site",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Scaffold a new Premast site with plugins",
   "type": "module",
   "bin": {
     "create-premast-site": "./src/index.js",
-    "premast-update": "./src/update.js"
+    "premast-update": "./src/update.js",
+    "premast-add-plugin": "./src/add-plugin.js"
   },
   "files": [
     "src",

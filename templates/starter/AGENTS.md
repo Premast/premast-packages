@@ -127,19 +127,10 @@ Edit `theme/tokens.js` — hot reloads automatically.
 ### Add a new plugin
 
 ```bash
-npm install @premast/site-plugin-xyz
+npm run add-plugin
 ```
 
-Then in `site.config.js`:
-```js
-import { xyzPlugin } from "@premast/site-plugin-xyz";
-plugins: [seoPlugin(), xyzPlugin()]
-```
-
-And in `next.config.mjs`:
-```js
-transpilePackages: [..., "@premast/site-plugin-xyz"]
-```
+This opens an interactive prompt — select the plugin and it automatically updates `package.json`, `site.config.js`, `puck.config.js`, `next.config.mjs`, and installs dependencies.
 
 ### Update Premast packages
 
