@@ -27,6 +27,7 @@ const PACKAGES = [
   "packages/site-core",
   "packages/site-plugin-seo",
   "packages/site-plugin-ui",
+  "packages/site-plugin-mcp",
   "packages/create-premast-site",
 ];
 

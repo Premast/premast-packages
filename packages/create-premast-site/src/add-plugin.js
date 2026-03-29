@@ -27,6 +27,17 @@ const AVAILABLE_PLUGINS = [
     importPath: "@premast/site-plugin-ui",
     configCall: "uiPlugin()",
   },
+  {
+    value: "@premast/site-plugin-mcp",
+    label: "MCP Plugin",
+    hint: "AI agent integration via Model Context Protocol",
+    importName: "mcpPlugin",
+    importPath: "@premast/site-plugin-mcp",
+    configCall: "mcpPlugin()",
+    serverImportPath: "@premast/site-plugin-mcp/server",
+    serverImportName: "mcpPluginServer",
+    pluginName: "mcp",
+  },
 ];
 
 function detectPackageManager() {

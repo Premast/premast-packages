@@ -58,6 +58,17 @@ const AVAILABLE_PLUGINS = [
     importPath: "@premast/site-plugin-ui",
     configCall: "uiPlugin()",
   },
+  {
+    value: "@premast/site-plugin-mcp",
+    label: "MCP Plugin",
+    hint: "AI agent integration via Model Context Protocol",
+    importName: "mcpPlugin",
+    importPath: "@premast/site-plugin-mcp",
+    configCall: "mcpPlugin()",
+    serverImportPath: "@premast/site-plugin-mcp/server",
+    serverImportName: "mcpPluginServer",
+    pluginName: "mcp",
+  },
 ];
 
 /** Run a command asynchronously so the spinner keeps animating. */
@@ -194,6 +205,7 @@ async function main() {
     "@premast/site-core": "site-core",
     "@premast/site-plugin-seo": "site-plugin-seo",
     "@premast/site-plugin-ui": "site-plugin-ui",
+    "@premast/site-plugin-mcp": "site-plugin-mcp",
   };
 
   for (const dep of Object.keys(pkg.dependencies)) {
