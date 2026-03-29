@@ -25,7 +25,6 @@ const ROOT = resolve(__dirname, "..");
 
 const PACKAGES = [
   "packages/site-core",
-  "packages/site-blocks",
   "packages/site-plugin-seo",
   "packages/site-plugin-ui",
   "packages/create-premast-site",

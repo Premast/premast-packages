@@ -1,7 +1,7 @@
 import { Render } from "@puckeditor/core/rsc";
 import { siteConfig } from "@/site.config";
-import { Footer } from "../../components/layout/Footer";
-import { Header } from "../../components/layout/Header";
+import Header from "@/components/layout/HeaderBlock";
+import Footer from "@/components/layout/FooterBlock";
 import styles from "../layout.module.css";
 
 export const runtime = "nodejs";

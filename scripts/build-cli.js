@@ -31,7 +31,7 @@ if (existsSync(DEST)) {
 cpSync(SOURCE, DEST, { recursive: true });
 
 // Remove files that shouldn't be in the published template
-const REMOVE = ["node_modules", ".next", ".env.local"];
+const REMOVE = ["node_modules", ".next", ".env.local", ".gitignore"];
 for (const name of REMOVE) {
   const path = resolve(DEST, name);
   if (existsSync(path)) {

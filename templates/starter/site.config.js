@@ -1,5 +1,5 @@
 import { createSiteConfig } from "@premast/site-core";
-import { baseBlocks, baseCategories } from "@premast/site-blocks";
+import { baseBlocks, baseCategories } from "@/components/puck/puckConfig";
 import { seoPlugin } from "@premast/site-plugin-seo";
 import { uiPlugin } from "@premast/site-plugin-ui";
 

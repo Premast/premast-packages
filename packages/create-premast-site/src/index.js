@@ -154,6 +154,31 @@ async function main() {
   mkdirSync(projectDir, { recursive: true });
   cpSync(TEMPLATE_DIR, projectDir, { recursive: true });
 
+  // Create .gitignore (npm strips it from published packages)
+  writeFileSync(join(projectDir, ".gitignore"), [
+    "# dependencies",
+    "node_modules/",
+    "",
+    "# next.js",
+    ".next/",
+    "out/",
+    "",
+    "# environment",
+    ".env.local",
+    ".env*.local",
+    "",
+    "# debug",
+    "npm-debug.log*",
+    "yarn-debug.log*",
+    "yarn-error.log*",
+    "pnpm-debug.log*",
+    "",
+    "# misc",
+    ".DS_Store",
+    "*.tgz",
+    "",
+  ].join("\n"));
+
   s.stop("Template copied.");
 
   // 2. Customize package.json
@@ -167,7 +192,6 @@ async function main() {
   // Replace workspace:* with published versions or file: links
   const packageDirMap = {
     "@premast/site-core": "site-core",
-    "@premast/site-blocks": "site-blocks",
     "@premast/site-plugin-seo": "site-plugin-seo",
     "@premast/site-plugin-ui": "site-plugin-ui",
   };
@@ -327,7 +351,7 @@ async function main() {
 function generateSiteConfig(selectedPlugins, projectName) {
   const imports = [
     'import { createSiteConfig } from "@premast/site-core";',
-    'import { baseBlocks, baseCategories } from "@premast/site-blocks";',
+    'import { baseBlocks, baseCategories } from "@/components/puck/puckConfig";',
   ];
 
   for (const plugin of selectedPlugins) {
@@ -380,7 +404,7 @@ export const siteConfig = createSiteConfig({
 
 function generatePuckConfig(selectedPlugins) {
   const imports = [
-    'import { baseBlocks, baseCategories } from "@premast/site-blocks";',
+    'import { baseBlocks, baseCategories } from "@/components/puck/puckConfig";',
     'import { buildPuckConfig } from "@premast/site-core/puck";',
   ];
 
@@ -395,8 +419,7 @@ function generatePuckConfig(selectedPlugins) {
   // SEO custom field imports
   let seoFieldSection = "";
   if (hasSeo) {
-    imports.push('import { SeoScoreField } from "@/components/seo/SeoScoreField";');
-    imports.push('import { SearchIndexingField } from "@/components/seo/SearchIndexingField";');
+    imports.push('import { SeoScoreField, SearchIndexingField } from "@premast/site-plugin-seo/editor";');
     seoFieldSection = `
 // Custom SEO field overrides (client-side enhanced fields)
 rootFields.noIndex = {
@@ -451,7 +474,6 @@ export const puckConfig = buildPuckConfig(allBlocks, allCategories, {}, rootFiel
 function generateNextConfig(selectedPlugins) {
   const packages = [
     '    "@premast/site-core",',
-    '    "@premast/site-blocks",',
     ...selectedPlugins.map((pl) => `    "${pl.value}",`),
   ];
 

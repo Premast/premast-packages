@@ -1,7 +1,7 @@
 import { Render } from "@puckeditor/core/rsc";
 import { siteConfig } from "@/site.config";
-import { LoFiPanel, LoFiPlaceholder } from "@/components/ui";
-import styles from "./page.module.css";
+import Hero from "@/components/pages/home/HeroBlock";
+import Content from "@/components/pages/home/ContentBlock";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,7 +17,6 @@ function parsePuckData(content) {
   return null;
 }
 
-/** Extract SEO metadata from Puck root fields. */
 function extractSeoMetadata(puckData, fallbackTitle) {
   const root = puckData?.root?.props || {};
   const meta = { title: root.metaTitle || fallbackTitle || "Premast Site" };
@@ -64,52 +63,29 @@ export default async function Home() {
     const connectDB = await siteConfig.getConnectDB();
     await connectDB();
     const models = await siteConfig.getModels();
-    const { Page } = models;
-    page = await Page.findOne({ slug: "home", published: true }).lean();
+    page = await models.Page.findOne({ slug: "home", published: true }).lean();
   } catch {
-    /* Offline DB or bad credentials — show fallback below */
+    /* Offline DB — show fallback */
   }
 
   if (page) {
     const puckData = parsePuckData(page.content);
-
     if (puckData) {
       const finalData = await siteConfig.runBeforePageRender(puckData, page);
-      return (
-        <div className={styles.page}>
-          <Render config={siteConfig.puckConfig} data={finalData} />
-        </div>
-      );
+      return <Render config={siteConfig.puckConfig} data={finalData} />;
     }
-
-    /* Legacy plain-text content fallback */
-    return (
-      <div className={styles.page}>
-        <LoFiPanel title={page.title}>
-          <p className={styles.body}>{page.content || ""}</p>
-        </LoFiPanel>
-      </div>
-    );
+    return <p>{page.content || ""}</p>;
   }
 
-  /* No published home page — show placeholder */
   return (
-    <div className={styles.page}>
-      <LoFiPanel title="Hero">
-        <p className={styles.lead}>
-          No published home page (slug <code style={{ fontSize: "0.85em" }}>home</code>
-          ) yet. After a successful DB connection, a default home page is created
-          automatically; publish it from the admin if needed.
-        </p>
-        <LoFiPlaceholder height={140} label="Image / video block" />
-      </LoFiPanel>
-
-      <LoFiPanel title="Content">
-        <div className={styles.stack}>
-          <LoFiPlaceholder height={56} label="Row A" />
-          <LoFiPlaceholder height={56} label="Row B" />
-        </div>
-      </LoFiPanel>
-    </div>
+    <>
+      <Hero
+        heading="Hero"
+        lead="Welcome to the site. Edit this page in the admin under Pages to customise your home page."
+        placeholderLabel="Image / video block"
+        placeholderHeight={140}
+      />
+      <Content heading="Content" rowA="Row A" rowB="Row B" />
+    </>
   );
 }

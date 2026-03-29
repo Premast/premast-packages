@@ -1,0 +1,15 @@
+.articleMetaRoot {
+  border: 1px solid var(--theme-border);
+  background: var(--theme-bg-subtle);
+}
+
+.articleMetaInner {
+  padding: 0.5rem 0.75rem;
+}
+
+.articleMetaLabel {
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--theme-text-muted);
+}

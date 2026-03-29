@@ -10,13 +10,13 @@ This is a **pnpm monorepo** with shared packages consumed by client Next.js site
 premast-packages/
   packages/
     site-core/              → @premast/site-core (DB, API, auth, admin, plugin system)
-    site-blocks/            → @premast/site-blocks (Puck visual editor blocks)
     site-plugin-seo/        → @premast/site-plugin-seo (SEO fields, score analyzer)
     site-plugin-ui/         → @premast/site-plugin-ui (Ant Design UI blocks: Flex, Grid, Card, Tabs, etc.)
     site-plugin-*/          → additional plugins
     create-premast-site/    → CLI to scaffold + update client sites
   templates/
     starter/                → Template copied by create-premast-site CLI
+      components/blocks/    → Base Puck blocks (Hero, Header, Footer, etc.) — local to each site
   docs/                     → Documentation
 ```
 
@@ -93,7 +93,7 @@ render: ({ text }) => {
 
 | Type | Pattern | Example |
 |------|---------|---------|
-| Core packages | `@premast/site-*` | `@premast/site-core`, `@premast/site-blocks` |
+| Core packages | `@premast/site-*` | `@premast/site-core` |
 | Plugins | `@premast/site-plugin-*` | `@premast/site-plugin-seo` |
 | Client sites | Any name | `acme-website` |
 | File extensions | `.jsx` for JSX, `.js` for logic | `AdminSidebar.jsx`, `config.js` |
@@ -115,15 +115,18 @@ src/
   plugin.js       → Plugin normalization
 ```
 
-### site-blocks
+### Base Blocks (in starter template, not a package)
 
 ```
-src/
-  blocks/         → Puck block definitions (Hero, Content, Header, Footer, Heading, Text, Spacer, ArticleHero, ArticleBody, ArticleMeta)
-  fields/         → Custom field components (RichTextField)
-  styles/         → CSS Modules for blocks
-  index.js        → Exports baseBlocks + baseCategories
+templates/starter/components/blocks/
+  HeroBlock.jsx, ContentBlock.jsx, HeaderBlock.jsx, FooterBlock.jsx,
+  HeadingBlock.jsx, TextBlock.jsx, SpacerBlock.jsx,
+  ArticleHeroBlock.jsx, ArticleBodyBlock.jsx, ArticleMetaBlock.jsx
+  blocks.module.css → CSS Modules for blocks
+  index.js          → Exports baseBlocks + baseCategories
 ```
+
+These are local to each client site — customize freely.
 
 ### site-plugin-ui
 
@@ -187,7 +190,7 @@ Plugins that have both client and server code should split exports:
 
 | What | Where | Why |
 |------|-------|-----|
-| New Puck block for all clients | `@premast/site-blocks` | Shared across all sites |
+| New Puck block | Client's `components/blocks/` | Local to that site, customizable |
 | New feature (SEO, payments, AI) | New `@premast/site-plugin-*` | Modular, optional |
 | Client-specific block | Client's `components/puck/` | Only for that site |
 | Bug fix in shared code | The relevant package | Fix once, all sites benefit |
@@ -203,7 +206,6 @@ const nextConfig = {
   serverExternalPackages: ["mongoose"],
   transpilePackages: [
     "@premast/site-core",
-    "@premast/site-blocks",
     // ... all installed @premast plugins
   ],
   turbopack: {},
@@ -220,7 +222,7 @@ const nextConfig = {
 
 ```js
 import { createSiteConfig } from "@premast/site-core";
-import { baseBlocks, baseCategories } from "@premast/site-blocks";
+import { baseBlocks, baseCategories } from "@/components/blocks";
 
 export const siteConfig = createSiteConfig({
   blocks: baseBlocks,
