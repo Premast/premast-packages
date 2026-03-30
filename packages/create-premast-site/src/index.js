@@ -87,6 +87,15 @@ function runCommand(cmd, args, cwd) {
 
 async function main() {
   const args = process.argv.slice(2);
+
+  // Subcommand routing
+  const subcommand = args.find((a) => !a.startsWith("-"));
+  if (subcommand === "add-plugin") {
+    const scriptPath = resolve(__dirname, "add-plugin.js");
+    execSync(`node "${scriptPath}"`, { stdio: "inherit", cwd: process.cwd() });
+    return;
+  }
+
   const isDevMode = args.includes("--dev");
 
   // --dev: resolve the monorepo root so we can create file: links
