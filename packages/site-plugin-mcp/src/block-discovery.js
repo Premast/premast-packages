@@ -251,6 +251,10 @@ export async function discoverAllBlocks() {
       blocksDir: resolve(cwd, "node_modules/@premast/site-plugin-ui/src/blocks"),
       indexFile: resolve(cwd, "node_modules/@premast/site-plugin-ui/src/index.js"),
     },
+    {
+      blocksDir: resolve(cwd, "node_modules/@premast/site-plugin-mcp/src/blocks"),
+      indexFile: resolve(cwd, "node_modules/@premast/site-plugin-mcp/src/index.js"),
+    },
   ];
 
   for (const { blocksDir, indexFile } of pluginDirs) {

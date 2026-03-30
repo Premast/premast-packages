@@ -1,7 +1,7 @@
 "use client";
 
 import { Input, InputNumber, Select, Radio } from "antd";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 const fieldStyle = {
    width: "100%",
@@ -32,11 +32,25 @@ function FieldWrap({ field, children }) {
 }
 
 export function TextField({ value, onChange, field }) {
+   const [local, setLocal] = useState(value ?? "");
+   const ref = useRef(null);
+
+   useEffect(() => {
+      // Only sync from parent if the input is not focused
+      if (ref.current && document.activeElement !== ref.current.input) {
+         setLocal(value ?? "");
+      }
+   }, [value]);
+
    return (
       <FieldWrap field={field}>
          <Input
-            value={value ?? ""}
-            onChange={(e) => onChange(e.target.value)}
+            ref={ref}
+            value={local}
+            onChange={(e) => {
+               setLocal(e.target.value);
+               onChange(e.target.value);
+            }}
             placeholder={field?.placeholder}
             style={fieldStyle}
          />
@@ -45,11 +59,24 @@ export function TextField({ value, onChange, field }) {
 }
 
 export function TextareaField({ value, onChange, field }) {
+   const [local, setLocal] = useState(value ?? "");
+   const ref = useRef(null);
+
+   useEffect(() => {
+      if (ref.current && document.activeElement !== ref.current.resizableTextArea?.textArea) {
+         setLocal(value ?? "");
+      }
+   }, [value]);
+
    return (
       <FieldWrap field={field}>
          <Input.TextArea
-            value={value ?? ""}
-            onChange={(e) => onChange(e.target.value)}
+            ref={ref}
+            value={local}
+            onChange={(e) => {
+               setLocal(e.target.value);
+               onChange(e.target.value);
+            }}
             placeholder={field?.placeholder}
             autoSize={{ minRows: 2, maxRows: 6 }}
             style={fieldStyle}
@@ -196,6 +223,7 @@ const blockIcons = {
    BreadcrumbBlock: "M3 12h2M9 12h2M15 12h2M6 9l3 3-3 3M12 9l3 3-3 3",
    StepsBlock:
       "M4 12h4M10 12h4M16 12h4M6 12a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM12 12a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM18 12a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z",
+   CustomBlock: "M7 8l5-5 5 5M7 16l5 5 5-5M12 3v18M4 12h16",
 };
 const defaultIcon = "M4 4h16v16H4z";
 

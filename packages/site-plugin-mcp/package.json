@@ -8,14 +8,17 @@
   "exports": {
     ".": "./src/index.js",
     "./server": "./src/server.js",
-    "./http": "./src/http-handler.js"
+    "./http": "./src/http-handler.js",
+    "./blocks": "./src/blocks/CustomBlock.jsx"
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
-    "jose": "^6.2.2"
+    "jose": "^6.2.2",
+    "sucrase": "^3.35.1",
+    "@monaco-editor/react": "^4.7.0"
   },
   "peerDependencies": {
     "mongoose": "^9.0.0",
