@@ -145,7 +145,7 @@ export async function createMcpHandler(siteConfig) {
       );
     }
 
-    // Check for existing session
+    // Check for existing session (works when the same instance handles it)
     const sessionId = request.headers.get("mcp-session-id");
     if (sessionId && sessions.has(sessionId)) {
       const session = sessions.get(sessionId);
@@ -153,8 +153,10 @@ export async function createMcpHandler(siteConfig) {
       return session.transport.handleRequest(request);
     }
 
-    // For new sessions (POST without session ID = initialization)
-    if (request.method === "POST" && !sessionId) {
+    // For POST requests: create a new server+transport.
+    // This covers both initial requests (no session ID) AND requests where
+    // the session was lost (serverless cold start, different instance, etc.).
+    if (request.method === "POST") {
       const transport = new WebStandardStreamableHTTPServerTransport({
         sessionIdGenerator: () => crypto.randomUUID(),
         onsessioninitialized: (id) => {
@@ -171,12 +173,14 @@ export async function createMcpHandler(siteConfig) {
       return transport.handleRequest(request);
     }
 
-    // If session ID provided but not found
-    if (sessionId && !sessions.has(sessionId)) {
-      return new Response(
-        JSON.stringify({ error: "Session not found. Re-initialize." }),
-        { status: 404, headers: { "Content-Type": "application/json" } },
-      );
+    // DELETE — close session if it exists
+    if (request.method === "DELETE") {
+      if (sessionId && sessions.has(sessionId)) {
+        const session = sessions.get(sessionId);
+        await session.transport.close();
+        sessions.delete(sessionId);
+      }
+      return new Response(null, { status: 204 });
     }
 
     // GET without session (standalone SSE not supported without session)

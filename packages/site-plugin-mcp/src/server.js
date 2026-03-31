@@ -283,7 +283,11 @@ async function deleteInstruction(_request, params, { connectDB }) {
 // GET /api/mcp/config  — get MCP server config JSON for copy-paste
 async function getMcpConfig(request, _params, {}) {
   const url = new URL(request.url);
-  const siteUrl = `${url.protocol}//${url.host}`;
+  // Behind a reverse proxy (Vercel, Nginx, etc.), request.url is internal
+  // (e.g. http://localhost:3000). Use forwarded headers for the real public URL.
+  const host = request.headers.get("x-forwarded-host") || url.host;
+  const proto = request.headers.get("x-forwarded-proto") || url.protocol.replace(":", "");
+  const siteUrl = `${proto}://${host}`;
 
   const config = {
     remote: {
