@@ -72,7 +72,15 @@ export default async function Home() {
     const puckData = parsePuckData(page.content);
     if (puckData) {
       const finalData = await siteConfig.runBeforePageRender(puckData, page);
-      return <Render config={siteConfig.puckConfig} data={finalData} />;
+      const jsonLd = puckData.root?.props?.structuredData;
+      return (
+        <>
+          {jsonLd && (
+            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
+          )}
+          <Render config={siteConfig.puckConfig} data={finalData} />
+        </>
+      );
     }
     return <p>{page.content || ""}</p>;
   }

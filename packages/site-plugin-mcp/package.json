@@ -1,6 +1,6 @@
 {
   "name": "@premast/site-plugin-mcp",
-  "version": "1.5.5",
+  "version": "1.5.6",
   "type": "module",
   "bin": {
     "premast-mcp": "./bin/premast-mcp.js"

@@ -113,8 +113,12 @@ export default async function ContentCatchAllPage({ params }) {
 
         const puckData = parsePuckData(item.content) ?? { root: {}, content: [] };
         const finalData = await siteConfig.runBeforePageRender(puckData, item);
+        const jsonLd = puckData.root?.props?.structuredData;
         return (
           <article>
+            {jsonLd && (
+              <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
+            )}
             <Render config={siteConfig.puckConfig} data={finalData} />
           </article>
         );
@@ -132,8 +136,12 @@ export default async function ContentCatchAllPage({ params }) {
       if (page) {
         const puckData = parsePuckData(page.content) ?? { root: {}, content: [] };
         const finalData = await siteConfig.runBeforePageRender(puckData, page);
+        const jsonLd = puckData.root?.props?.structuredData;
         return (
           <article>
+            {jsonLd && (
+              <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
+            )}
             <Render config={siteConfig.puckConfig} data={finalData} />
           </article>
         );
