@@ -1,6 +1,12 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import mongoose from "mongoose";
+import { readFileSync } from "fs";
+import { fileURLToPath } from "url";
+import { dirname, resolve } from "path";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const PKG_VERSION = JSON.parse(readFileSync(resolve(__dirname, "../package.json"), "utf-8")).version;
 
 import { validateMcpToken, registerAuthTools } from "./tools/auth.js";
 import { registerBlockTools } from "./tools/blocks.js";
@@ -217,8 +223,8 @@ export async function startMcpServer() {
 
   // 3. Create MCP server
   const server = new McpServer({
-    name: "premast-cms",
-    version: "1.2.0",
+    name: "cms",
+    version: PKG_VERSION,
     capabilities: {
       tools: {},
     },
