@@ -66,6 +66,7 @@ const MANAGED_FILES = [
   ".gitignore",
   "puck.config.js",
   "app/sitemap.js",
+  "app/robots.js",
 ];
 
 /** Run a command asynchronously. */

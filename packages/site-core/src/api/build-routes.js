@@ -3,6 +3,7 @@ import * as globalHandlers from "./handlers/globals.js";
 import * as contentTypeHandlers from "./handlers/content-types.js";
 import * as contentItemHandlers from "./handlers/content-items.js";
 import * as authHandlers from "./handlers/auth.js";
+import * as settingsHandlers from "./handlers/settings.js";
 import { requireAuth, optionalAuth } from "../auth/guard.js";
 
 const BOTH = ["super_admin", "editor"];
@@ -40,6 +41,11 @@ const CORE_ROUTES = {
   "GET /api/content-types/:id": requireAuth(contentTypeHandlers.getContentType, { roles: BOTH }),
   "PATCH /api/content-types/:id": requireAuth(contentTypeHandlers.patchContentType, { roles: ["super_admin"] }),
   "DELETE /api/content-types/:id": requireAuth(contentTypeHandlers.deleteContentType, { roles: ["super_admin"] }),
+
+  // --- Site Settings ---
+  "GET /api/settings": requireAuth(settingsHandlers.getSettings, { roles: ["super_admin"] }),
+  "GET /api/settings/:key": settingsHandlers.getSetting,
+  "PATCH /api/settings": requireAuth(settingsHandlers.patchSettings, { roles: ["super_admin"] }),
 
   // --- Content Items ---
   "GET /api/content-items": requireAuth(contentItemHandlers.listContentItems, { roles: BOTH }),

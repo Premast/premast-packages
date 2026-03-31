@@ -4,9 +4,10 @@ import { Global } from "./models/Global.js";
 import { ContentType } from "./models/ContentType.js";
 import { ContentItem } from "./models/ContentItem.js";
 import { User } from "./models/User.js";
+import { SiteSettings } from "./models/SiteSettings.js";
 
 export async function registerModels(plugins) {
-  const models = { Page, Global, ContentType, ContentItem, User };
+  const models = { Page, Global, ContentType, ContentItem, User, SiteSettings };
   for (const plugin of plugins) {
     let pluginModels = null;
     if (typeof plugin.loadModels === "function") {
