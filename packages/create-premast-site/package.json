@@ -1,6 +1,6 @@
 {
   "name": "@premast/create-premast-site",
-  "version": "1.5.4",
+  "version": "1.5.5",
   "description": "Scaffold a new Premast site with plugins",
   "type": "module",
   "bin": {

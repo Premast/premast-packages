@@ -65,6 +65,7 @@ const MANAGED_FILES = [
   "app/antd-provider.jsx",
   ".gitignore",
   "puck.config.js",
+  "app/sitemap.js",
 ];
 
 /** Run a command asynchronously. */
