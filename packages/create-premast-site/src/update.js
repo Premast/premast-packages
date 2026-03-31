@@ -90,15 +90,17 @@ function detectPackageManager(projectDir) {
   return "npm";
 }
 
-/** Get all @premast/* dependencies from package.json. */
+/** Get all @premast/* dependencies from package.json (deps + devDeps). */
 function getPremastDeps(projectDir) {
   const pkgPath = join(projectDir, "package.json");
   if (!existsSync(pkgPath)) return {};
   const pkg = JSON.parse(readFileSync(pkgPath, "utf-8"));
   const deps = {};
-  for (const [name, version] of Object.entries(pkg.dependencies || {})) {
-    if (name.startsWith("@premast/")) {
-      deps[name] = version;
+  for (const section of [pkg.dependencies, pkg.devDependencies]) {
+    for (const [name, version] of Object.entries(section || {})) {
+      if (name.startsWith("@premast/")) {
+        deps[name] = version;
+      }
     }
   }
   return deps;
@@ -158,17 +160,21 @@ function writeMeta(projectDir, meta) {
   writeFileSync(metaPath, JSON.stringify(meta, null, 2) + "\n");
 }
 
-/** Get version from site-core package.json. */
+/** Get latest published version from the registry. */
 function getTemplateVersion() {
-  const corePkgPath = existsSync(resolve(__dirname, "../../site-core/package.json"))
-    ? resolve(__dirname, "../../site-core/package.json")
-    : null;
-
-  if (corePkgPath) {
-    return JSON.parse(readFileSync(corePkgPath, "utf-8")).version;
+  // Try to fetch the latest version from the registry
+  try {
+    const latest = execSync("npm view @premast/site-core version --registry=https://npm.pkg.github.com", {
+      encoding: "utf-8",
+      timeout: 10_000,
+      stdio: ["pipe", "pipe", "pipe"],
+    }).trim();
+    if (latest) return latest;
+  } catch {
+    // Registry unreachable — fall back to installed version
   }
 
-  // Fallback: read own package version
+  // Fallback: read own package version (installed locally)
   const ownPkg = resolve(__dirname, "../package.json");
   return JSON.parse(readFileSync(ownPkg, "utf-8")).version;
 }
@@ -215,21 +221,28 @@ async function main() {
 
   if (updatePackages) {
     const s = p.spinner();
-    const depNames = Object.keys(premastDeps).join(" ");
 
-    s.start(`Updating packages with ${pm}...`);
+    // Rewrite package.json ranges to ^latest so installs get the correct version
+    const pkg = JSON.parse(readFileSync(pkgPath, "utf-8"));
+    for (const name of Object.keys(premastDeps)) {
+      const section = pkg.dependencies?.[name] !== undefined ? "dependencies" : "devDependencies";
+      pkg[section][name] = `^${templateVersion}`;
+    }
+    writeFileSync(pkgPath, JSON.stringify(pkg, null, 3) + "\n");
+
+    s.start(`Installing packages with ${pm}...`);
     try {
       if (pm === "pnpm") {
-        await runCommand("pnpm", ["update", ...Object.keys(premastDeps)], projectDir);
+        await runCommand("pnpm", ["install"], projectDir);
       } else if (pm === "yarn") {
-        await runCommand("yarn", ["upgrade", ...Object.keys(premastDeps)], projectDir);
+        await runCommand("yarn", ["install"], projectDir);
       } else {
-        await runCommand("npm", ["update", ...Object.keys(premastDeps)], projectDir);
+        await runCommand("npm", ["install"], projectDir);
       }
-      s.stop("Packages updated.");
+      s.stop(`Packages updated to ^${templateVersion}.`);
     } catch (e) {
-      s.stop(pc.yellow(`Package update failed: ${e.message}`));
-      p.log.warn("You can update manually later.");
+      s.stop(pc.yellow(`Package install failed: ${e.message}`));
+      p.log.warn("You can run install manually later.");
     }
   }
 
