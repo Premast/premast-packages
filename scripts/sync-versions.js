@@ -28,6 +28,7 @@ const PACKAGES = [
   "packages/site-plugin-seo",
   "packages/site-plugin-ui",
   "packages/site-plugin-mcp",
+  "packages/site-plugin-i18n",
   "packages/create-premast-site",
 ];
 

@@ -164,7 +164,12 @@ export function createSiteConfig({ blocks = {}, categories = {}, plugins = [], s
 
 function collectHooks(plugins) {
   const hookMap = {
+    beforePageSave: [],
     afterPageSave: [],
+    beforeGlobalSave: [],
+    afterGlobalSave: [],
+    beforeContentItemSave: [],
+    afterContentItemSave: [],
     afterDbConnect: [],
     beforePageRender: [],
   };
@@ -177,4 +182,68 @@ function collectHooks(plugins) {
     }
   }
   return hookMap;
+}
+
+/**
+ * Run beforeGlobalSave hooks. Same shape as runBeforePageSave —
+ * receives `{ data, action, key }` and returns the (possibly mutated)
+ * data object.
+ */
+export async function runBeforeGlobalSave(hooks, data, action, key) {
+  if (!hooks?.beforeGlobalSave?.length) return data;
+  let result = data;
+  for (const { pluginName, fn } of hooks.beforeGlobalSave) {
+    try {
+      const out = await fn({ data: result, action, key });
+      if (out && typeof out === "object") result = out;
+    } catch (e) {
+      console.error(`[premast] beforeGlobalSave hook from "${pluginName}" failed:`, e);
+    }
+  }
+  return result;
+}
+
+/**
+ * Run beforePageSave hooks. Each hook receives `{ data, action }`
+ * and should return the (possibly mutated) data object. Errors are
+ * logged but do not abort the save.
+ *
+ * Exported so API handlers can call it without re-deriving the hook
+ * collection from a config instance.
+ */
+export async function runBeforePageSave(hooks, data, action) {
+  if (!hooks?.beforePageSave?.length) return data;
+  let result = data;
+  for (const { pluginName, fn } of hooks.beforePageSave) {
+    try {
+      const out = await fn({ data: result, action });
+      if (out && typeof out === "object") result = out;
+    } catch (e) {
+      console.error(`[premast] beforePageSave hook from "${pluginName}" failed:`, e);
+    }
+  }
+  return result;
+}
+
+/**
+ * Run beforeContentItemSave hooks. Same shape as runBeforePageSave —
+ * receives `{ data, action, contentType }` and returns the (possibly
+ * mutated) data object.
+ *
+ * The optional `contentType` is the ContentType id the item belongs
+ * to, which lets locale-aware hooks scope translationGroupId lookups
+ * by type when needed.
+ */
+export async function runBeforeContentItemSave(hooks, data, action, contentType) {
+  if (!hooks?.beforeContentItemSave?.length) return data;
+  let result = data;
+  for (const { pluginName, fn } of hooks.beforeContentItemSave) {
+    try {
+      const out = await fn({ data: result, action, contentType });
+      if (out && typeof out === "object") result = out;
+    } catch (e) {
+      console.error(`[premast] beforeContentItemSave hook from "${pluginName}" failed:`, e);
+    }
+  }
+  return result;
 }

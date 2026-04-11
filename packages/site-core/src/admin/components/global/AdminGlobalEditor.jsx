@@ -32,12 +32,22 @@ function getInitialEditorData(content) {
   return EMPTY_DATA;
 }
 
-export function AdminGlobalEditor({ globalKey }) {
+export function AdminGlobalEditor({ globalKey, locale = null }) {
   const puckConfig = usePuckConfig();
   const [editorData, setEditorData] = useState(EMPTY_DATA);
   const [published, setPublished] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // Build the API URL with an optional `?locale=` query — the server
+  // uses it to select the right (key, locale) sibling. When locale
+  // is null we keep the legacy behavior (no query param).
+  const apiUrl = locale
+    ? `/api/globals/${globalKey}?locale=${encodeURIComponent(locale)}`
+    : `/api/globals/${globalKey}`;
+  // Mutating requests use the non-query URL — the body carries the
+  // locale so site-core's upsert finds the correct record.
+  const apiMutateUrl = `/api/globals/${globalKey}`;
 
   useEffect(() => {
     let active = true;
@@ -45,7 +55,7 @@ export function AdminGlobalEditor({ globalKey }) {
       setLoading(true);
       setError("");
       try {
-        const res = await fetch(`/api/globals/${globalKey}`);
+        const res = await fetch(apiUrl);
         const json = await res.json();
         if (!res.ok) throw new Error(json.error || "Failed to load global element");
         if (!active) return;
@@ -60,14 +70,14 @@ export function AdminGlobalEditor({ globalKey }) {
     }
     loadGlobal();
     return () => { active = false; };
-  }, [globalKey]);
+  }, [apiUrl]);
 
   const handleTogglePublished = async (checked) => {
     try {
-      const res = await fetch(`/api/globals/${globalKey}`, {
+      const res = await fetch(apiMutateUrl, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ published: checked }),
+        body: JSON.stringify({ published: checked, locale }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Update failed");
@@ -80,10 +90,10 @@ export function AdminGlobalEditor({ globalKey }) {
 
   const handlePublish = async (data) => {
     try {
-      const res = await fetch(`/api/globals/${globalKey}`, {
+      const res = await fetch(apiMutateUrl, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: JSON.stringify(data) }),
+        body: JSON.stringify({ content: JSON.stringify(data), locale }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Failed to save global element");
@@ -122,7 +132,7 @@ export function AdminGlobalEditor({ globalKey }) {
     <Flex vertical gap={16}>
       <div className={`puck-theme ${styles.editorShell}`}>
         <Puck
-          key={globalKey}
+          key={`${globalKey}:${locale ?? "default"}`}
           config={puckConfig}
           data={editorData}
           onPublish={handlePublish}

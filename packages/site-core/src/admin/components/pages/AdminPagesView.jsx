@@ -2,6 +2,7 @@
 
 import {
   AppstoreOutlined,
+  GlobalOutlined,
   PlusOutlined,
   ReloadOutlined,
   TableOutlined,
@@ -18,6 +19,7 @@ import {
   Popconfirm,
   Row,
   Segmented,
+  Select,
   Spin,
   Switch,
   Table,
@@ -78,10 +80,22 @@ export function AdminPagesView() {
   const [saving, setSaving] = useState(false);
   const [form] = Form.useForm();
 
+  // Locale filter — "all" shows every page (including unlabeled legacy
+  // docs). A specific locale filters the pages list via the
+  // existing `?locale=` query param supported by listPages.
+  const [localeFilter, setLocaleFilter] = useState("all");
+  // Available locales come from the i18n plugin's public endpoint.
+  // If the plugin isn't installed the call 404s and we render the
+  // toolbar without the filter.
+  const [availableLocales, setAvailableLocales] = useState([]);
+
   const fetchPages = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/pages");
+      const url = localeFilter === "all"
+        ? "/api/pages"
+        : `/api/pages?locale=${encodeURIComponent(localeFilter)}`;
+      const res = await fetch(url);
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Failed to load pages");
       setPages(json.data ?? []);
@@ -91,6 +105,19 @@ export function AdminPagesView() {
     } finally {
       setLoading(false);
     }
+  }, [localeFilter]);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const res = await fetch("/api/i18n/locales");
+        if (!res.ok) return;
+        const json = await res.json();
+        if (active) setAvailableLocales(json.locales ?? []);
+      } catch { /* plugin not installed — no filter */ }
+    })();
+    return () => { active = false; };
   }, []);
 
   useEffect(() => {
@@ -190,6 +217,24 @@ export function AdminPagesView() {
       ellipsis: true,
       render: (slug) => <Text code>{slug}</Text>,
     },
+    // Language — only show when the i18n plugin is active. Hiding
+    // the column on single-locale sites keeps the table uncluttered.
+    ...(availableLocales.length > 0
+      ? [{
+          title: "Language",
+          dataIndex: "locale",
+          key: "locale",
+          width: 110,
+          render: (locale) =>
+            locale ? (
+              <Tag color="blue" style={{ textTransform: "uppercase" }}>
+                {locale}
+              </Tag>
+            ) : (
+              <Tag>—</Tag>
+            ),
+        }]
+      : []),
     {
       title: "Published",
       dataIndex: "published",
@@ -264,6 +309,22 @@ export function AdminPagesView() {
           Pages
         </span>
         <Flex gap={8} align="center">
+          {availableLocales.length > 0 && (
+            <Select
+              size="small"
+              value={localeFilter}
+              onChange={setLocaleFilter}
+              style={{ minWidth: 130 }}
+              suffixIcon={<GlobalOutlined />}
+              options={[
+                { label: "All languages", value: "all" },
+                ...availableLocales.map((code) => ({
+                  label: code.toUpperCase(),
+                  value: code,
+                })),
+              ]}
+            />
+          )}
           <Segmented
             size="small"
             value={viewMode}

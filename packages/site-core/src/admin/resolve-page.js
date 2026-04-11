@@ -14,8 +14,22 @@ const DYNAMIC_ROUTES = [
     Component: AdminPageEditor,
     extractProps: (match) => ({ pageId: match[1] }),
   },
+  // /admin/global/:key/:locale — per-locale edit (preferred)
+  // Matched BEFORE the fallback single-segment pattern below.
   {
-    pattern: /^\/admin\/global\/(.+)$/,
+    pattern: /^\/admin\/global\/([^/]+)\/([^/]+)$/,
+    Component: AdminGlobalEditor,
+    extractProps: (match) => ({
+      globalKey: match[1],
+      locale: match[2] === "default" ? null : match[2],
+    }),
+  },
+  // /admin/global/:key — legacy single-segment route. Kept for
+  // backwards compatibility with older bookmarks and single-locale
+  // sites. Loads whatever record the API returns for that key
+  // (typically the default-locale or legacy null-locale one).
+  {
+    pattern: /^\/admin\/global\/([^/]+)$/,
     Component: AdminGlobalEditor,
     extractProps: (match) => ({ globalKey: match[1] }),
   },

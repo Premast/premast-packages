@@ -38,6 +38,17 @@ const AVAILABLE_PLUGINS = [
     serverImportName: "mcpPluginServer",
     pluginName: "mcp",
   },
+  {
+    value: "@premast/site-plugin-i18n",
+    label: "i18n Plugin",
+    hint: "Multilingual content, hreflang/sitemap, locale-aware admin",
+    importName: "i18nPlugin",
+    importPath: "@premast/site-plugin-i18n",
+    configCall: 'i18nPlugin({ locales: ["en"], defaultLocale: "en" })',
+    serverImportPath: "@premast/site-plugin-i18n/server",
+    serverImportName: "i18nPluginServer",
+    pluginName: "i18n",
+  },
 ];
 
 function detectPackageManager() {

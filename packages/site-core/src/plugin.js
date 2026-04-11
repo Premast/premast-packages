@@ -11,7 +11,7 @@
  *   adminPages?: [{ key, label, icon, path, component }],
  *   apiRoutes?: [{ path, method, handler }],
  *   models?: { [ModelName]: MongooseSchema },
- *   hooks?: { afterDbConnect?, afterPageSave?, beforePageRender? },
+ *   hooks?: { afterDbConnect?, beforePageSave?, afterPageSave?, beforePageRender? },
  *   seedData?: function,
  * }
  */

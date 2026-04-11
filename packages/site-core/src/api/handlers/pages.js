@@ -1,10 +1,12 @@
 import mongoose from "mongoose";
+import { runBeforePageSave } from "../../config.js";
 
 export async function listPages(request, _params, { connectDB, session }) {
   await connectDB();
   const { Page } = (await import("../../db/models/Page.js"));
   const { searchParams } = new URL(request.url);
   const published = searchParams.get("published");
+  const locale = searchParams.get("locale");
   const filter = {};
   if (!session) {
     // Unauthenticated: only published content
@@ -13,6 +15,7 @@ export async function listPages(request, _params, { connectDB, session }) {
     if (published === "true") filter.published = true;
     if (published === "false") filter.published = false;
   }
+  if (locale) filter.locale = locale;
   const pages = await Page.find(filter).sort({ updatedAt: -1 }).lean();
   return Response.json({ data: pages });
 }
@@ -21,14 +24,24 @@ export async function createPage(request, _params, { connectDB, hooks }) {
   await connectDB();
   const { Page } = (await import("../../db/models/Page.js"));
   const body = await request.json();
-  const { title, slug, content, published } = body;
+  const { title, slug, content, published, locale, translationGroupId } = body;
   if (!title || !slug) {
     return Response.json({ error: "title and slug are required" }, { status: 400 });
   }
   try {
-    const page = await Page.create({
-      title, slug, content: content ?? "", published: Boolean(published),
-    });
+    // Build the initial doc, then let beforePageSave hooks (e.g. i18n)
+    // mutate it — typically to fill in locale/translationGroupId.
+    const initial = {
+      title,
+      slug,
+      content: content ?? "",
+      published: Boolean(published),
+      ...(locale !== undefined ? { locale } : {}),
+      ...(translationGroupId !== undefined ? { translationGroupId } : {}),
+    };
+    const data = await runBeforePageSave(hooks, initial, "create");
+
+    const page = await Page.create(data);
     // Run afterPageSave hooks
     if (hooks?.afterPageSave) {
       for (const { fn } of hooks.afterPageSave) {
@@ -40,7 +53,7 @@ export async function createPage(request, _params, { connectDB, hooks }) {
     return Response.json({ data: page }, { status: 201 });
   } catch (err) {
     if (err.code === 11000) {
-      return Response.json({ error: "slug already exists" }, { status: 409 });
+      return Response.json({ error: "slug already exists for this locale" }, { status: 409 });
     }
     throw err;
   }
@@ -66,7 +79,7 @@ export async function patchPage(request, params, { connectDB, hooks }) {
   await connectDB();
   const { Page } = (await import("../../db/models/Page.js"));
   const body = await request.json();
-  const allowed = ["title", "slug", "content", "published"];
+  const allowed = ["title", "slug", "content", "published", "locale", "translationGroupId"];
   const update = {};
   for (const key of allowed) {
     if (key in body) {
@@ -82,9 +95,13 @@ export async function patchPage(request, params, { connectDB, hooks }) {
   if (Object.keys(update).length === 0) {
     return Response.json({ error: "no valid fields to update" }, { status: 400 });
   }
+
+  // Allow beforePageSave hooks to enrich the update (e.g. fill locale).
+  const enriched = await runBeforePageSave(hooks, update, "update");
+
   try {
     const page = await Page.findByIdAndUpdate(
-      params.id, { $set: update }, { returnDocument: "after", runValidators: true },
+      params.id, { $set: enriched }, { returnDocument: "after", runValidators: true },
     ).lean();
     if (!page) return Response.json({ error: "not found" }, { status: 404 });
     // Run afterPageSave hooks
@@ -98,7 +115,7 @@ export async function patchPage(request, params, { connectDB, hooks }) {
     return Response.json({ data: page });
   } catch (err) {
     if (err.code === 11000) {
-      return Response.json({ error: "slug already exists" }, { status: 409 });
+      return Response.json({ error: "slug already exists for this locale" }, { status: 409 });
     }
     throw err;
   }

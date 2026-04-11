@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { runCoreMigrations } from "./migrations.js";
 
 /**
  * Connect to MongoDB. Calls mongoose.connect() every time —
@@ -23,20 +24,36 @@ export async function connectMongoose() {
 }
 
 /**
- * Creates a `connectDB` function that connects to MongoDB and runs
- * all registered `afterDbConnect` hooks once.
+ * Creates a `connectDB` function that connects to MongoDB, runs
+ * site-core migrations once, then runs `afterDbConnect` hooks once.
+ *
+ * Migrations always run before plugin hooks so plugins observe a
+ * fully migrated database.
+ *
+ * Each `afterDbConnect` hook is called with `({ mongoose, models })`.
+ * Plugins should use `models[Name]` rather than re-importing
+ * mongoose, so they always see the consuming site's models (not
+ * stale models registered in the plugin's own mongoose copy).
  */
 export function createConnectDB(afterConnectHooks = []) {
-  let hooksRan = false;
+  let setupRan = false;
 
   return async function connectDB() {
     const conn = await connectMongoose();
 
-    if (!hooksRan) {
-      hooksRan = true;
+    if (!setupRan) {
+      setupRan = true;
+      try {
+        await runCoreMigrations();
+      } catch (err) {
+        // Migration failures shouldn't crash the whole app — they'll
+        // retry on the next boot. Log loudly so the operator notices.
+        console.error("[premast] core migrations failed (will retry on next boot):", err);
+      }
+      const ctx = { mongoose, models: mongoose.connection.models };
       for (const { pluginName, fn } of afterConnectHooks) {
         try {
-          await fn();
+          await fn(ctx);
         } catch (err) {
           console.error(`[premast] afterDbConnect hook from "${pluginName}" failed:`, err);
         }

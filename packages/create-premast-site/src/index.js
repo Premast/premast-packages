@@ -69,6 +69,17 @@ const AVAILABLE_PLUGINS = [
     serverImportName: "mcpPluginServer",
     pluginName: "mcp",
   },
+  {
+    value: "@premast/site-plugin-i18n",
+    label: "i18n Plugin",
+    hint: "Multilingual content, hreflang/sitemap, locale-aware admin",
+    importName: "i18nPlugin",
+    importPath: "@premast/site-plugin-i18n",
+    configCall: 'i18nPlugin({ locales: ["en"], defaultLocale: "en" })',
+    serverImportPath: "@premast/site-plugin-i18n/server",
+    serverImportName: "i18nPluginServer",
+    pluginName: "i18n",
+  },
 ];
 
 /** Run a command asynchronously so the spinner keeps animating. */
@@ -215,6 +226,7 @@ async function main() {
     "@premast/site-plugin-seo": "site-plugin-seo",
     "@premast/site-plugin-ui": "site-plugin-ui",
     "@premast/site-plugin-mcp": "site-plugin-mcp",
+    "@premast/site-plugin-i18n": "site-plugin-i18n",
   };
 
   for (const dep of Object.keys(pkg.dependencies)) {
