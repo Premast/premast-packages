@@ -29,7 +29,7 @@ export async function listContentItems(request, _params, { connectDB }) {
   return Response.json({ data: items });
 }
 
-export async function createContentItem(request, _params, { connectDB, hooks }) {
+export async function createContentItem(request, _params, { connectDB, hooks, models }) {
   await connectDB();
   const { ContentItem } = (await import("../../db/models/ContentItem.js"));
   const body = await request.json();
@@ -59,6 +59,25 @@ export async function createContentItem(request, _params, { connectDB, hooks }) 
     const data = await runBeforeContentItemSave(hooks, initial, "create", contentType);
 
     const doc = await ContentItem.create(data);
+    // Run afterContentItemSave hooks. The auto-redirect hook only
+    // acts on update, so create is effectively a no-op for it — but
+    // we wire the invocation here so other plugins can react to new
+    // content. Pre-load the parent ContentType (needed for path
+    // resolution by the redirect hook).
+    if (hooks?.afterContentItemSave?.length) {
+      const ContentTypeModel = models?.ContentType;
+      const ct = ContentTypeModel
+        ? await ContentTypeModel.findById(contentType).lean()
+        : null;
+      const item = doc.toObject ? doc.toObject() : doc;
+      for (const { fn } of hooks.afterContentItemSave) {
+        try {
+          await fn({ contentItem: item, action: "create", oldDoc: null, contentType: ct, models });
+        } catch (e) {
+          console.error("[premast] afterContentItemSave hook error:", e);
+        }
+      }
+    }
     return Response.json({ data: doc }, { status: 201 });
   } catch (err) {
     if (err.code === 11000) {
@@ -81,7 +100,7 @@ export async function getContentItem(_request, params, { connectDB }) {
   return Response.json({ data: doc });
 }
 
-export async function patchContentItem(request, params, { connectDB, hooks }) {
+export async function patchContentItem(request, params, { connectDB, hooks, models }) {
   if (!mongoose.isValidObjectId(params.id)) {
     return Response.json({ error: "invalid content item id" }, { status: 400 });
   }
@@ -106,14 +125,39 @@ export async function patchContentItem(request, params, { connectDB, hooks }) {
     return Response.json({ error: "no valid fields to update" }, { status: 400 });
   }
 
+  // Snapshot the current document before mutation so the auto-redirect
+  // hook can compare oldDoc.slug vs the new value.
+  const oldDoc = await ContentItem.findById(params.id).lean();
+
   // Allow beforeContentItemSave hooks to enrich the patch (e.g. fill locale).
-  const enriched = await runBeforeContentItemSave(hooks, update, "update");
+  const enriched = await runBeforeContentItemSave(
+    hooks,
+    update,
+    "update",
+    oldDoc?.contentType,
+    oldDoc,
+  );
 
   try {
     const doc = await ContentItem.findByIdAndUpdate(
       params.id, { $set: enriched }, { returnDocument: "after", runValidators: true },
     ).lean();
     if (!doc) return Response.json({ error: "not found" }, { status: 404 });
+    // Run afterContentItemSave hooks. The ContentType is needed by
+    // the auto-redirect hook to build paths like "/blog/<slug>".
+    if (hooks?.afterContentItemSave?.length) {
+      const ContentTypeModel = models?.ContentType;
+      const ct = ContentTypeModel && doc.contentType
+        ? await ContentTypeModel.findById(doc.contentType).lean()
+        : null;
+      for (const { fn } of hooks.afterContentItemSave) {
+        try {
+          await fn({ contentItem: doc, action: "update", oldDoc, contentType: ct, models });
+        } catch (e) {
+          console.error("[premast] afterContentItemSave hook error:", e);
+        }
+      }
+    }
     return Response.json({ data: doc });
   } catch (err) {
     if (err.code === 11000) {

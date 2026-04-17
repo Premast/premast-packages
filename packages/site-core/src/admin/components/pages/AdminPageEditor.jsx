@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import styles from "./AdminPageEditor.module.css";
 import { puckFieldOverrides, DrawerItemOverride, BlockSearchOverride } from "../../../puck/build-config.js";
 import { usePuckConfig } from "../../PuckConfigContext.jsx";
+import { PageMetaPanel } from "./PageMetaPanel.jsx";
 
 const EMPTY_DATA = { content: [], root: {} };
 
@@ -55,6 +56,8 @@ export function AdminPageEditor({ pageId }) {
   const puckConfig = usePuckConfig();
   const [editorData, setEditorData] = useState(EMPTY_DATA);
   const [published, setPublished] = useState(false);
+  const [pageTitle, setPageTitle] = useState("");
+  const [pageSlug, setPageSlug] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -76,6 +79,8 @@ export function AdminPageEditor({ pageId }) {
         if (!active) return;
 
         setPublished(json.data?.published ?? false);
+        setPageTitle(json.data?.title ?? "");
+        setPageSlug(json.data?.slug ?? "");
         setEditorData(getInitialEditorData(json.data?.content ?? ""));
       } catch (e) {
         if (!active) return;
@@ -181,6 +186,27 @@ export function AdminPageEditor({ pageId }) {
                     onChange={handleTogglePublished}
                   />
                 </Flex>
+                {children}
+              </>
+            ),
+            // Inject the new "Page identity" panel at the top of the
+            // right sidebar — above Puck's existing root fields. The
+            // panel handles its own PATCH for title/slug, so changes
+            // here don't need to flow through Puck's own publish.
+            fields: ({ children }) => (
+              <>
+                <div style={{ padding: "16px 16px 0" }}>
+                  <PageMetaPanel
+                    endpoint={`/api/pages/${pageId}`}
+                    initialTitle={pageTitle}
+                    initialSlug={pageSlug}
+                    pathPrefix=""
+                    onSaved={(updated) => {
+                      if (updated?.title !== undefined) setPageTitle(updated.title);
+                      if (updated?.slug !== undefined) setPageSlug(updated.slug);
+                    }}
+                  />
+                </div>
                 {children}
               </>
             ),

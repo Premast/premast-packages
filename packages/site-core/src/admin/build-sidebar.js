@@ -3,6 +3,7 @@ import { AdminPagesView } from "./components/pages/AdminPagesView.jsx";
 import { AdminGlobalView } from "./components/global/AdminGlobalView.jsx";
 import { AdminTemplatesView } from "./components/templates/AdminTemplatesView.jsx";
 import { AdminContentView } from "./components/content/AdminContentView.jsx";
+import { AdminRedirectsView } from "./components/redirects/AdminRedirectsView.jsx";
 import { SettingsPage } from "./components/SettingsPage.jsx";
 import { UsersPage } from "./components/users/UsersPage.jsx";
 
@@ -17,6 +18,7 @@ const CORE_SIDEBAR_ITEMS = [
     label: "Content",
     children: [{ key: "/admin/content", label: "All content", path: "/admin/content", component: AdminContentView, wrapSuspense: true }],
   },
+  { key: "/admin/redirects", icon: "SwapOutlined", label: "Redirects", path: "/admin/redirects", component: AdminRedirectsView },
   { key: "/admin/settings", icon: "SettingOutlined", label: "Settings", path: "/admin/settings", requiredRole: "super_admin", component: SettingsPage },
   { key: "/admin/users", icon: "TeamOutlined", label: "Users", path: "/admin/users", requiredRole: "super_admin", component: UsersPage },
 ];

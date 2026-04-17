@@ -1,6 +1,7 @@
 import { Render } from "@puckeditor/core/rsc";
 import { siteConfig } from "@/site.config";
-import { notFound } from "next/navigation";
+import { notFound, redirect, permanentRedirect } from "next/navigation";
+import { resolveRedirect } from "@premast/site-core/services/resolve-redirect.js";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -148,8 +149,21 @@ export default async function ContentCatchAllPage({ params }) {
       }
     }
 
+    // No content matched. Before 404'ing, check the Redirect
+    // collection — an editor may have renamed this slug, leaving a
+    // 301 from the old path to the new one.
+    const requestPath = "/" + path.join("/");
+    const r = await resolveRedirect(requestPath, null, models);
+    if (r) {
+      if (r.statusCode === 302) redirect(r.toPath);
+      permanentRedirect(r.toPath);
+    }
+
     return notFound();
-  } catch {
+  } catch (err) {
+    // permanentRedirect / redirect throw NEXT_REDIRECT — let those
+    // propagate so Next can serve the 301/302.
+    if (err?.digest?.startsWith?.("NEXT_REDIRECT")) throw err;
     return notFound();
   }
 }

@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import styles from "./AdminContentEditor.module.css";
 import { puckFieldOverrides, DrawerItemOverride, BlockSearchOverride } from "../../../puck/build-config.js";
 import { usePuckConfig } from "../../PuckConfigContext.jsx";
+import { PageMetaPanel } from "../pages/PageMetaPanel.jsx";
 
 const EMPTY_DATA = { content: [], root: {} };
 
@@ -36,6 +37,12 @@ export function AdminContentEditor({ contentId }) {
   const puckConfig = usePuckConfig();
   const [editorData, setEditorData] = useState(EMPTY_DATA);
   const [published, setPublished] = useState(false);
+  const [itemTitle, setItemTitle] = useState("");
+  const [itemSlug, setItemSlug] = useState("");
+  // urlPrefix from the populated parent ContentType — used by
+  // PageMetaPanel to build the displayed redirect path so it matches
+  // what the backend hook will create.
+  const [pathPrefix, setPathPrefix] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -50,6 +57,11 @@ export function AdminContentEditor({ contentId }) {
         if (!res.ok) throw new Error(json.error || "Failed to load content");
         if (!active) return;
         setPublished(json.data?.published ?? false);
+        setItemTitle(json.data?.title ?? "");
+        setItemSlug(json.data?.slug ?? "");
+        // contentType is populated as { _id, name, slug, urlPrefix }
+        // by the GET /api/content-items/:id handler.
+        setPathPrefix(json.data?.contentType?.urlPrefix ?? "");
         setEditorData(getInitialEditorData(json.data?.content ?? ""));
       } catch (e) {
         if (!active) return;
@@ -141,6 +153,23 @@ export function AdminContentEditor({ contentId }) {
                     onChange={handleTogglePublished}
                   />
                 </Flex>
+                {children}
+              </>
+            ),
+            fields: ({ children }) => (
+              <>
+                <div style={{ padding: "16px 16px 0" }}>
+                  <PageMetaPanel
+                    endpoint={`/api/content-items/${contentId}`}
+                    initialTitle={itemTitle}
+                    initialSlug={itemSlug}
+                    pathPrefix={pathPrefix}
+                    onSaved={(updated) => {
+                      if (updated?.title !== undefined) setItemTitle(updated.title);
+                      if (updated?.slug !== undefined) setItemSlug(updated.slug);
+                    }}
+                  />
+                </div>
                 {children}
               </>
             ),

@@ -4,6 +4,7 @@ import * as contentTypeHandlers from "./handlers/content-types.js";
 import * as contentItemHandlers from "./handlers/content-items.js";
 import * as authHandlers from "./handlers/auth.js";
 import * as settingsHandlers from "./handlers/settings.js";
+import * as redirectHandlers from "./handlers/redirects.js";
 import { requireAuth, optionalAuth } from "../auth/guard.js";
 
 const BOTH = ["super_admin", "editor"];
@@ -53,6 +54,13 @@ const CORE_ROUTES = {
   "GET /api/content-items/:id": requireAuth(contentItemHandlers.getContentItem, { roles: BOTH }),
   "PATCH /api/content-items/:id": requireAuth(contentItemHandlers.patchContentItem, { roles: BOTH }),
   "DELETE /api/content-items/:id": requireAuth(contentItemHandlers.deleteContentItem, { roles: BOTH }),
+
+  // --- Redirects ---
+  "GET /api/redirects": requireAuth(redirectHandlers.listRedirects, { roles: BOTH }),
+  "POST /api/redirects": requireAuth(redirectHandlers.createRedirect, { roles: BOTH }),
+  "GET /api/redirects/:id": requireAuth(redirectHandlers.getRedirect, { roles: BOTH }),
+  "PATCH /api/redirects/:id": requireAuth(redirectHandlers.patchRedirect, { roles: BOTH }),
+  "DELETE /api/redirects/:id": requireAuth(redirectHandlers.deleteRedirect, { roles: BOTH }),
 };
 
 export function buildApiRouteMap(plugins) {

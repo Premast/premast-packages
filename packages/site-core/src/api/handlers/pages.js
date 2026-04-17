@@ -72,7 +72,7 @@ export async function getPage(_request, params, { connectDB, session }) {
   return Response.json({ data: page });
 }
 
-export async function patchPage(request, params, { connectDB, hooks }) {
+export async function patchPage(request, params, { connectDB, hooks, models }) {
   if (!mongoose.isValidObjectId(params.id)) {
     return Response.json({ error: "invalid page id" }, { status: 400 });
   }
@@ -96,8 +96,13 @@ export async function patchPage(request, params, { connectDB, hooks }) {
     return Response.json({ error: "no valid fields to update" }, { status: 400 });
   }
 
+  // Snapshot the current document BEFORE the update so afterPageSave
+  // hooks (e.g. core auto-redirect) can compare oldDoc.slug vs the
+  // new value. Also passed to beforePageSave for symmetry.
+  const oldDoc = await Page.findById(params.id).lean();
+
   // Allow beforePageSave hooks to enrich the update (e.g. fill locale).
-  const enriched = await runBeforePageSave(hooks, update, "update");
+  const enriched = await runBeforePageSave(hooks, update, "update", oldDoc);
 
   try {
     const page = await Page.findByIdAndUpdate(
@@ -107,7 +112,7 @@ export async function patchPage(request, params, { connectDB, hooks }) {
     // Run afterPageSave hooks
     if (hooks?.afterPageSave) {
       for (const { fn } of hooks.afterPageSave) {
-        try { await fn({ page, action: "update" }); } catch (e) {
+        try { await fn({ page, action: "update", oldDoc, models }); } catch (e) {
           console.error("[premast] afterPageSave hook error:", e);
         }
       }

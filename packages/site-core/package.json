@@ -1,16 +1,18 @@
 {
   "name": "@premast/site-core",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "type": "module",
   "main": "./src/index.js",
   "exports": {
     ".": "./src/index.js",
     "./admin": "./src/admin/index.js",
+    "./admin/*": "./src/admin/*",
     "./theme": "./src/theme/index.js",
     "./db": "./src/db/index.js",
     "./api": "./src/api/index.js",
     "./puck": "./src/puck/build-config.js",
     "./auth": "./src/auth/index.js",
+    "./services/*": "./src/services/*",
     "./theme/css/puck-condensed.css": "./src/theme/css/puck-condensed.css"
   },
   "publishConfig": {

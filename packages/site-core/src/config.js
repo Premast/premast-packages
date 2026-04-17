@@ -2,6 +2,10 @@ import { validatePlugin } from "./plugin.js";
 import { buildPuckConfig } from "./puck/build-config.js";
 import { buildAdminSidebarItems } from "./admin/build-sidebar.js";
 import { mergeAdminTokens } from "./admin/admin-theme.js";
+import {
+  autoRedirectAfterPageSave,
+  autoRedirectAfterContentItemSave,
+} from "./services/auto-redirect.js";
 
 export function createSiteConfig({ blocks = {}, categories = {}, plugins = [], serverPlugins, theme = {}, admin = {} }) {
   const validatedPlugins = plugins.map(validatePlugin);
@@ -173,6 +177,18 @@ function collectHooks(plugins) {
     afterDbConnect: [],
     beforePageRender: [],
   };
+  // Built-in core hooks. These run before any plugin hooks and ship
+  // with every site — no opt-in. The auto-redirect hook listens for
+  // slug changes on Pages and ContentItems and writes 301 redirects
+  // into the Redirect collection.
+  hookMap.afterPageSave.push({
+    pluginName: "core:auto-redirect",
+    fn: autoRedirectAfterPageSave,
+  });
+  hookMap.afterContentItemSave.push({
+    pluginName: "core:auto-redirect",
+    fn: autoRedirectAfterContentItemSave,
+  });
   for (const plugin of plugins) {
     if (!plugin.hooks) continue;
     for (const [name, fn] of Object.entries(plugin.hooks)) {
@@ -211,12 +227,14 @@ export async function runBeforeGlobalSave(hooks, data, action, key) {
  * Exported so API handlers can call it without re-deriving the hook
  * collection from a config instance.
  */
-export async function runBeforePageSave(hooks, data, action) {
+export async function runBeforePageSave(hooks, data, action, oldDoc = null) {
   if (!hooks?.beforePageSave?.length) return data;
   let result = data;
   for (const { pluginName, fn } of hooks.beforePageSave) {
     try {
-      const out = await fn({ data: result, action });
+      // oldDoc is additive; existing hooks that destructure only
+      // { data, action } continue to work without changes.
+      const out = await fn({ data: result, action, oldDoc });
       if (out && typeof out === "object") result = out;
     } catch (e) {
       console.error(`[premast] beforePageSave hook from "${pluginName}" failed:`, e);
@@ -234,12 +252,20 @@ export async function runBeforePageSave(hooks, data, action) {
  * to, which lets locale-aware hooks scope translationGroupId lookups
  * by type when needed.
  */
-export async function runBeforeContentItemSave(hooks, data, action, contentType) {
+export async function runBeforeContentItemSave(
+  hooks,
+  data,
+  action,
+  contentType,
+  oldDoc = null,
+) {
   if (!hooks?.beforeContentItemSave?.length) return data;
   let result = data;
   for (const { pluginName, fn } of hooks.beforeContentItemSave) {
     try {
-      const out = await fn({ data: result, action, contentType });
+      // oldDoc is additive; existing hooks that destructure only the
+      // earlier fields keep working.
+      const out = await fn({ data: result, action, contentType, oldDoc });
       if (out && typeof out === "object") result = out;
     } catch (e) {
       console.error(`[premast] beforeContentItemSave hook from "${pluginName}" failed:`, e);
