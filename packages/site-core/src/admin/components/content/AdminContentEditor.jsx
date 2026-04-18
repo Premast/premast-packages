@@ -156,20 +156,22 @@ export function AdminContentEditor({ contentId }) {
                 {children}
               </>
             ),
-            fields: ({ children }) => (
+            fields: ({ children, itemSelector }) => (
               <>
-                <div style={{ padding: "16px 16px 0" }}>
-                  <PageMetaPanel
-                    endpoint={`/api/content-items/${contentId}`}
-                    initialTitle={itemTitle}
-                    initialSlug={itemSlug}
-                    pathPrefix={pathPrefix}
-                    onSaved={(updated) => {
-                      if (updated?.title !== undefined) setItemTitle(updated.title);
-                      if (updated?.slug !== undefined) setItemSlug(updated.slug);
-                    }}
-                  />
-                </div>
+                {itemSelector == null && (
+                  <div style={{ padding: "16px 16px 0" }}>
+                    <PageMetaPanel
+                      endpoint={`/api/content-items/${contentId}`}
+                      initialTitle={itemTitle}
+                      initialSlug={itemSlug}
+                      pathPrefix={pathPrefix}
+                      onSaved={(updated) => {
+                        if (updated?.title !== undefined) setItemTitle(updated.title);
+                        if (updated?.slug !== undefined) setItemSlug(updated.slug);
+                      }}
+                    />
+                  </div>
+                )}
                 {children}
               </>
             ),

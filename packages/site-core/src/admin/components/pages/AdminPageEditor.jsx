@@ -193,20 +193,22 @@ export function AdminPageEditor({ pageId }) {
             // right sidebar — above Puck's existing root fields. The
             // panel handles its own PATCH for title/slug, so changes
             // here don't need to flow through Puck's own publish.
-            fields: ({ children }) => (
+            fields: ({ children, itemSelector }) => (
               <>
-                <div style={{ padding: "16px 16px 0" }}>
-                  <PageMetaPanel
-                    endpoint={`/api/pages/${pageId}`}
-                    initialTitle={pageTitle}
-                    initialSlug={pageSlug}
-                    pathPrefix=""
-                    onSaved={(updated) => {
-                      if (updated?.title !== undefined) setPageTitle(updated.title);
-                      if (updated?.slug !== undefined) setPageSlug(updated.slug);
-                    }}
-                  />
-                </div>
+                {itemSelector == null && (
+                  <div style={{ padding: "16px 16px 0" }}>
+                    <PageMetaPanel
+                      endpoint={`/api/pages/${pageId}`}
+                      initialTitle={pageTitle}
+                      initialSlug={pageSlug}
+                      pathPrefix=""
+                      onSaved={(updated) => {
+                        if (updated?.title !== undefined) setPageTitle(updated.title);
+                        if (updated?.slug !== undefined) setPageSlug(updated.slug);
+                      }}
+                    />
+                  </div>
+                )}
                 {children}
               </>
             ),
