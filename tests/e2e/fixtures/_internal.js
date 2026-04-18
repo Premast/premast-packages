@@ -45,19 +45,19 @@ export async function snapshot(page, testInfo) {
 }
 
 /**
- * Login via /api/auth/login and cache the resulting __premast_session
- * cookie as a Playwright storage-state JSON. Reused across specs so
- * bcrypt runs once per role per run.
+ * Login via /api/auth/login and persist the __premast_session cookie
+ * as a Playwright storage-state JSON.
+ *
+ * We deliberately do NOT cache this across tests. The `cleanDb`
+ * fixture wipes + re-seeds the admin user between tests, so the old
+ * JWT's `sub` claim stops matching any DB row. When a subsequent
+ * admin request hits `/api/auth/me`, the handler clears the session
+ * cookie on the response — and every navigation after that redirects
+ * to `/admin/login`. A fresh login per test is ~200ms (bcrypt) and
+ * keeps the cookie's sub pointing at the currently-seeded user.
  */
 export async function ensureStorageState(name, email, password, baseURL) {
   const file = path.join(STORAGE_DIR, `${name}.json`);
-  try {
-    await fs.access(file);
-    return file;
-  } catch {
-    /* missing — create below */
-  }
-
   await fs.mkdir(STORAGE_DIR, { recursive: true });
 
   const res = await fetch(`${baseURL}/api/auth/login`, {
@@ -77,6 +77,13 @@ export async function ensureStorageState(name, email, password, baseURL) {
   }
 
   const { hostname } = new URL(baseURL);
+  // Unix-seconds 7d from now — matches the JWT expiry and makes the
+  // cookie persistent in Playwright's storage-state format. Using
+  // `expires: -1` (Playwright's "session cookie" sentinel) causes
+  // some contexts to treat the cookie as untrusted on redirects
+  // through the admin middleware, which is observable as a random
+  // redirect to /admin/login.
+  const expires = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7;
   const state = {
     cookies: [
       {
@@ -87,7 +94,7 @@ export async function ensureStorageState(name, email, password, baseURL) {
         httpOnly: true,
         secure: false,
         sameSite: "Lax",
-        expires: -1,
+        expires,
       },
     ],
     origins: [],

@@ -59,13 +59,15 @@ function barePuck() {
 
 async function openEditorAndReadStatus(adminPage, pageId) {
   await adminPage.goto(`/admin/pages/${pageId}`, { waitUntil: "domcontentloaded" });
-  // Puck's editor shell carries a puck-theme class — wait until it's
-  // hydrated enough for the custom field to have rendered. The status
-  // label is one of three exact strings defined in SeoScoreField.jsx.
-  const statusLabel = adminPage
-    .locator("text=/^(Good|Needs Improvement|Poor)$/")
-    .first();
-  await expect(statusLabel).toBeVisible({ timeout: 30_000 });
+  // Puck's right-hand fields panel keeps the SEO score field inside a
+  // collapsed accordion by default, so the element is `display:none`
+  // in the layout sense — Playwright calls it "hidden" even though
+  // it's in the DOM with correct text. We want the attached element's
+  // textContent, not its visibility. `.first()` + `.textContent()`
+  // works because Playwright's auto-wait on textContent resolves as
+  // soon as the element is attached.
+  const statusLabel = adminPage.locator("text=/^(Good|Needs Improvement|Poor)$/").first();
+  await statusLabel.waitFor({ state: "attached", timeout: 30_000 });
   return (await statusLabel.textContent()).trim();
 }
 

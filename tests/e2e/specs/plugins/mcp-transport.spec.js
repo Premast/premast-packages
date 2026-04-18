@@ -96,10 +96,14 @@ test.describe("MCP plugin — JSON-RPC over HTTP", () => {
 
   test("tools/list returns the registered tools", async ({ request, adminRequest }) => {
     const { raw } = await createToken(adminRequest, "mcp-tools");
+    const auth = { ...MCP_HEADERS, Authorization: `Bearer ${raw}` };
 
-    // Initialize first — some servers require it before other methods.
-    await request.post("/api/mcp", {
-      headers: { ...MCP_HEADERS, Authorization: `Bearer ${raw}` },
+    // Streamable HTTP is session-stateful: the server returns an
+    // Mcp-Session-Id on initialize that must be echoed back on
+    // subsequent calls, otherwise the server can't resolve which
+    // transport instance the request belongs to and returns 400.
+    const init = await request.post("/api/mcp", {
+      headers: auth,
       data: {
         jsonrpc: "2.0",
         id: 1,
@@ -111,9 +115,19 @@ test.describe("MCP plugin — JSON-RPC over HTTP", () => {
         },
       },
     });
+    expect(init.status()).toBe(200);
+    const sessionId = init.headers()["mcp-session-id"];
+    expect(sessionId, "server must return an mcp-session-id after initialize").toBeTruthy();
+
+    // Per MCP spec, clients send a notifications/initialized AFTER
+    // the initialize response. Some servers gate tool calls on it.
+    await request.post("/api/mcp", {
+      headers: { ...auth, "Mcp-Session-Id": sessionId },
+      data: { jsonrpc: "2.0", method: "notifications/initialized" },
+    });
 
     const res = await request.post("/api/mcp", {
-      headers: { ...MCP_HEADERS, Authorization: `Bearer ${raw}` },
+      headers: { ...auth, "Mcp-Session-Id": sessionId },
       data: { jsonrpc: "2.0", id: 2, method: "tools/list" },
     });
     expect(res.status()).toBe(200);
@@ -147,11 +161,21 @@ test.describe("MCP plugin — JSON-RPC over HTTP", () => {
 
   test("revoked token stops working", async ({ request, adminRequest }) => {
     const { id, raw } = await createToken(adminRequest, "mcp-revoke");
+    const initBody = {
+      jsonrpc: "2.0",
+      id: 1,
+      method: "initialize",
+      params: {
+        protocolVersion: "2025-06-18",
+        capabilities: {},
+        clientInfo: { name: "premast-e2e", version: "0.0.0" },
+      },
+    };
 
     // Token is valid before revocation.
     const before = await request.post("/api/mcp", {
       headers: { ...MCP_HEADERS, Authorization: `Bearer ${raw}` },
-      data: { jsonrpc: "2.0", id: 1, method: "initialize" },
+      data: initBody,
     });
     expect(before.status()).toBe(200);
 
@@ -162,7 +186,7 @@ test.describe("MCP plugin — JSON-RPC over HTTP", () => {
     // Same call with same token is now 401.
     const after = await request.post("/api/mcp", {
       headers: { ...MCP_HEADERS, Authorization: `Bearer ${raw}` },
-      data: { jsonrpc: "2.0", id: 2, method: "initialize" },
+      data: { ...initBody, id: 2 },
     });
     expect(after.status()).toBe(401);
   });
