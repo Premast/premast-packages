@@ -6,10 +6,14 @@ A modular, plugin-based CMS built on **Next.js**, **Puck Editor**, **MongoDB**, 
 
 | Package | Description |
 |---------|-------------|
-| [`@premast/site-core`](packages/site-core) | Database models, API handlers, auth, admin shell, plugin system |
-| [`@premast/site-blocks`](packages/site-blocks) | Puck visual editor blocks (Heading, Text, Hero, Columns, etc.) |
-| [`@premast/site-plugin-seo`](packages/site-plugin-seo) | SEO fields, meta tags, score analyzer, search indexing |
-| [`@premast/create-premast-site`](packages/create-premast-site) | CLI to scaffold new client sites |
+| [`@premast/site-core`](packages/site-core) | Database models, API handlers, auth, admin shell, plugin system, migrations runner |
+| [`@premast/site-plugin-seo`](packages/site-plugin-seo) | SEO fields, meta tags, score analyzer, sitemap helpers |
+| [`@premast/site-plugin-ui`](packages/site-plugin-ui) | 14 Ant Design UI blocks (Flex, Grid, Card, Tabs, Carousel, etc.) |
+| [`@premast/site-plugin-mcp`](packages/site-plugin-mcp) | MCP server for AI agent integration (HTTP + stdio transports) |
+| [`@premast/site-plugin-i18n`](packages/site-plugin-i18n) | Multilingual content: locales, translation groups, hreflang |
+| [`@premast/create-premast-site`](packages/create-premast-site) | CLI to scaffold, update, and add plugins to client sites |
+
+> Base Puck blocks (Hero, Header, Footer, Heading, Text, Spacer, Article blocks) live in each client site at `components/blocks/`, not in a package — they're scaffolded by the CLI so each project can customize them freely.
 
 ## Quick Start
 
@@ -60,11 +64,14 @@ npm run update
 premast-packages/
   packages/
     site-core/              → @premast/site-core
-    site-blocks/            → @premast/site-blocks
     site-plugin-seo/        → @premast/site-plugin-seo
+    site-plugin-ui/         → @premast/site-plugin-ui
+    site-plugin-mcp/        → @premast/site-plugin-mcp
+    site-plugin-i18n/       → @premast/site-plugin-i18n
     create-premast-site/    → CLI tool
   templates/
     starter/                → Template copied by CLI
+      components/blocks/    → Base Puck blocks (local to each site)
   docs/                     → Documentation
 ```
 
@@ -124,13 +131,14 @@ Register in `site.config.js`:
 
 ```js
 import { createSiteConfig } from "@premast/site-core";
-import { baseBlocks, baseCategories } from "@premast/site-blocks";
+import { baseBlocks, baseCategories } from "@/components/blocks";
 import { seoPlugin } from "@premast/site-plugin-seo";
+import { uiPlugin } from "@premast/site-plugin-ui";
 
 export const siteConfig = createSiteConfig({
   blocks: baseBlocks,
   categories: baseCategories,
-  plugins: [seoPlugin()],
+  plugins: [seoPlugin(), uiPlugin()],
 });
 ```
 
