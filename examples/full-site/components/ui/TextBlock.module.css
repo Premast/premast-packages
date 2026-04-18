@@ -1,0 +1,6 @@
+.textBlock {
+  margin: 0;
+  color: var(--theme-text-muted);
+  line-height: 1.7;
+  white-space: pre-wrap;
+}

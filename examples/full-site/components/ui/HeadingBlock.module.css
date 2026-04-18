@@ -1,0 +1,8 @@
+.headingBlock {
+  margin: 0;
+  font-size: 2rem;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  color: var(--theme-text);
+}

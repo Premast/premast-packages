@@ -5,15 +5,25 @@
   "packageManager": "pnpm@10.6.5",
   "scripts": {
     "lint": "pnpm --dir templates/starter build",
+    "lint:drift": "node scripts/lint-example-drift.js",
     "build:cli": "node scripts/build-cli.js",
     "version:check": "node scripts/sync-versions.js",
     "version:set": "node scripts/sync-versions.js",
-    "publish:all": "node scripts/sync-versions.js && pnpm build:cli && pnpm -r publish --no-git-checks"
+    "publish:all": "node scripts/sync-versions.js && pnpm build:cli && pnpm -r publish --no-git-checks",
+    "example:dev": "pnpm --filter premast-example-full-site dev",
+    "test:e2e": "node scripts/run-e2e.js",
+    "test:e2e:ui": "node scripts/run-e2e.js --ui",
+    "test:e2e:headed": "node scripts/run-e2e.js --headed"
   },
   "simple-git-hooks": {
     "pre-commit": "node scripts/sync-versions.js"
   },
   "devDependencies": {
+    "@aws-sdk/client-s3": "^3.600.0",
+    "@playwright/test": "^1.48.0",
+    "@premast/site-core": "workspace:*",
+    "mongodb-memory-server": "^10.1.2",
+    "mongoose": "^9.3.3",
     "simple-git-hooks": "^2.13.1"
   }
 }

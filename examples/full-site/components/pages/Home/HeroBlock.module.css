@@ -1,0 +1,49 @@
+.heroRoot {
+  border: 1px solid var(--theme-border-strong);
+  background: var(--theme-surface);
+  box-shadow: 4px 4px 0 var(--theme-shadow-offset);
+}
+
+.heroTitle {
+  margin: 0;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  border-bottom: 1px dashed var(--theme-border-dashed);
+  background: var(--theme-bg-subtle);
+  color: var(--theme-text-muted);
+}
+
+.heroContent {
+  padding: 0.85rem 0.75rem 1rem;
+}
+
+.heroLead {
+  margin: 0 0 0.75rem;
+  font-size: 0.95rem;
+  color: var(--theme-text-muted);
+  max-width: 42ch;
+}
+
+.heroPlaceholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed var(--theme-border-dashed);
+  background: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 6px,
+    var(--theme-placeholder-stripe) 6px,
+    var(--theme-placeholder-stripe) 7px
+  );
+  color: var(--theme-text-muted);
+}
+
+.heroPlaceholderLabel {
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}

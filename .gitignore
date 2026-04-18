@@ -10,3 +10,13 @@ dist/
 
 # CLI build artifact (copied from templates/starter by build:cli script)
 packages/create-premast-site/template/
+
+# Playwright / E2E artefacts
+playwright-report/
+test-results/
+tests/e2e/.auth/
+tests/e2e/screenshots/
+tests/e2e/.env
+tests/e2e/.env.*
+.mongodb-binaries/
+
