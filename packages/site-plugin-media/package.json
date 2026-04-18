@@ -1,0 +1,27 @@
+{
+  "name": "@premast/site-plugin-media",
+  "version": "1.8.0",
+  "description": "Media library for Premast: S3/DO-Spaces uploads, Media admin page, and a Puck `media` field type.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.js",
+    "./server": "./src/server.js",
+    "./editor": "./src/editor.js"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.600.0",
+    "@aws-sdk/s3-request-presigner": "^3.600.0"
+  },
+  "peerDependencies": {
+    "@ant-design/icons": "^5.0.0",
+    "@premast/site-core": "^1.7.0",
+    "@puckeditor/core": ">=0.17.0",
+    "antd": "^5.0.0 || ^6.0.0",
+    "mongoose": "^9.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  }
+}

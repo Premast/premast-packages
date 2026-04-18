@@ -13,6 +13,7 @@ export function myPlugin(options = {}) {
     version: "1.0.0",          // Optional
     blocks: {},                // Puck block definitions
     fields: {},                // Field injections into existing blocks
+    fieldTypes: {},            // Custom Puck field types — { name: ReactComponent }
     categories: {},            // Puck editor categories
     adminPages: [],            // Admin sidebar pages
     apiRoutes: [],             // API route handlers
@@ -137,6 +138,37 @@ fields: {
   },
 }
 ```
+
+### `fieldTypes` — Register Custom Puck Field Types
+
+Puck ships with a fixed set of field types (`text`, `textarea`, `number`, `select`, `radio`, `array`, `object`, `custom`). To add a new type that feels native — so block authors can write `{ type: "media" }` the same way they write `{ type: "text" }` — register a component under a name:
+
+```js
+import { MediaPickerField } from "./fields/MediaPickerField.jsx";
+
+fieldTypes: {
+  media: MediaPickerField,
+}
+```
+
+Any block's field that references `type: "media"` is rewritten by site-core at config-build time to `{ type: "custom", render: MediaPickerField, ...rest }` before Puck sees it. This works across top-level fields, `arrayFields`, and `objectFields` — the resolver recurses.
+
+Block authors then write the cleaner form:
+
+```js
+// before — plain URL text input
+logoSrc: { type: "text", label: "Logo image path" },
+
+// after — rich picker, same stored value (URL string)
+logoSrc: { type: "media", label: "Logo image" },
+```
+
+**Rules:**
+- The registered component receives the standard Puck custom-field props (`value`, `onChange`, `name`, `field`).
+- Name collisions across plugins log a warning; the later-registered plugin wins.
+- Keep the stored value shape backward-compatible with the built-in type it replaces — e.g. a `media` picker that stores a URL string is drop-in for any existing `text` field that held an image URL. That's what makes old pages keep rendering after engineers swap the field type.
+- The component lives in `editor.js` (client-safe) — never import mongoose or the S3 SDK in the file that defines it.
+- If a block references a custom type name that no registered plugin provides, site-core falls back to a plain `text` input and warns once per type name. This lets a plugin (e.g. the UI plugin) reference `type: "media"` in its blocks without hard-depending on the media plugin — if the site installs both, the picker shows up; if not, the field remains usable as a URL text input.
 
 ### `categories` — Puck Editor Categories
 

@@ -29,6 +29,7 @@ const PACKAGES = [
   "packages/site-plugin-ui",
   "packages/site-plugin-mcp",
   "packages/site-plugin-i18n",
+  "packages/site-plugin-media",
   "packages/create-premast-site",
 ];
 

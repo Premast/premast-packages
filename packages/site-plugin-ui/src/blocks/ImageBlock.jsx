@@ -3,7 +3,7 @@ import styles from "../styles/ui-blocks.module.css";
 export const ImageBlock = {
   label: "Image",
   fields: {
-    src: { type: "text", label: "Image URL" },
+    src: { type: "media", label: "Image" },
     alt: { type: "text", label: "Alt Text" },
     caption: { type: "text", label: "Caption" },
     width: { type: "text", label: "Width (e.g. 100%, 600px)" },

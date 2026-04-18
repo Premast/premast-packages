@@ -11,6 +11,9 @@
 - User management (CRUD, role-based access, password reset)
 - SEO plugin (meta fields, score analyzer, sitemap, robots.txt)
 - UI plugin (14 Ant Design blocks: Flex, Grid, Card, Tabs, Accordion, etc.)
+- Media plugin (DO Spaces / S3 uploads, `/admin/media` library, `type: "media"` Puck field)
+- Multilingual content (i18n plugin: per-locale pages, hreflang, locale-aware admin)
+- Plugin-extensible custom Puck field types (`fieldTypes` hook in site-core)
 - Auto-slug generation from title
 - SEO health dashboard with per-page scoring
 - Block search filter in Puck editor
@@ -25,9 +28,10 @@
 ## Future Roadmap
 
 ### v1.1 — Media & Preview
-- [ ] **Media upload system** — file upload API, media library browser, image picker field
+- [x] **Media upload system** — shipped via `@premast/site-plugin-media` (DO Spaces / S3, admin library, `type: "media"` field)
 - [ ] **Page preview** — draft preview before publishing (separate preview URL)
 - [ ] **Rich text improvements** — inline image support, table support in BlockNote editor
+- [ ] **Image transforms** — on-the-fly resize / format conversion in the media pipeline
 
 ### v1.2 — Content Model
 - [ ] **Content type custom fields** — define metadata fields per content type (author, date, tags, etc.)
@@ -47,7 +51,8 @@
 - [ ] **Autosave** — periodic draft saving in the Puck editor
 
 ### v2.0 — Platform
-- [ ] **Multi-language (i18n)** — admin UI translations, content localization
+- [x] **Multi-language (i18n)** — shipped via `@premast/site-plugin-i18n` (content localization, hreflang)
+- [ ] **Admin UI translations** — localize the admin panel chrome itself
 - [ ] **Dark/light mode toggle** — admin theme switching
 - [ ] **Documentation site** — hosted docs with guides, API reference, tutorials
 - [ ] **Plugin marketplace** — discover and install community plugins

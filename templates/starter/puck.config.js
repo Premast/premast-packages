@@ -32,6 +32,14 @@ for (const plugin of plugins) {
   if (plugin.categories) Object.assign(allCategories, plugin.categories);
 }
 
+// Collect custom field types registered by plugins.
+// Blocks can reference these by name (e.g. `{ type: "media" }`) and
+// the config builder rewrites them to Puck's `{ type: "custom", render }`.
+const fieldTypes = {};
+for (const plugin of plugins) {
+  if (plugin.fieldTypes) Object.assign(fieldTypes, plugin.fieldTypes);
+}
+
 // Custom field overrides (client-side enhanced fields)
 rootFields.noIndex = {
   type: "custom",
@@ -44,4 +52,4 @@ rootFields.seoScore = {
   render: SeoScoreField,
 };
 
-export const puckConfig = buildPuckConfig(allBlocks, allCategories, {}, rootFields);
+export const puckConfig = buildPuckConfig(allBlocks, allCategories, {}, rootFields, fieldTypes);

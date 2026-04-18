@@ -7,6 +7,11 @@
  *   version?: string,
  *   blocks?: { [componentName]: PuckBlockDefinition },
  *   fields?: { [targetBlock]: { [fieldName]: PuckFieldDefinition } },
+ *   fieldTypes?: { [customTypeName]: ReactComponent },
+ *     // Register new Puck field types that blocks can reference by name.
+ *     // E.g. { media: MediaPickerField } lets blocks write
+ *     // `logo: { type: "media", label: "Logo" }` and the config builder
+ *     // rewrites it to `{ type: "custom", render: MediaPickerField }`.
  *   categories?: { [categoryName]: { title, components[] } },
  *   adminPages?: [{ key, label, icon, path, component }],
  *   apiRoutes?: [{ path, method, handler }],
@@ -27,6 +32,9 @@ export function validatePlugin(plugin) {
   }
   if (plugin.fields && typeof plugin.fields !== "object") {
     throw new Error(`Plugin "${plugin.name}": fields must be an object`);
+  }
+  if (plugin.fieldTypes && typeof plugin.fieldTypes !== "object") {
+    throw new Error(`Plugin "${plugin.name}": fieldTypes must be an object`);
   }
   if (plugin.adminPages && !Array.isArray(plugin.adminPages)) {
     throw new Error(`Plugin "${plugin.name}": adminPages must be an array`);

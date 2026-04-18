@@ -72,7 +72,23 @@ export function createSiteConfig({ blocks = {}, categories = {}, plugins = [], s
     if (plugin.rootFields) Object.assign(rootFields, plugin.rootFields);
   }
 
-  const puckConfig = buildPuckConfig(allBlocks, allCategories, fieldInjections, rootFields);
+  // Collect custom Puck field types registered by plugins. Blocks can
+  // reference these by name (e.g. `{ type: "media" }`) and the config
+  // builder rewrites them to `{ type: "custom", render }` shape.
+  const fieldTypes = {};
+  for (const plugin of validatedPlugins) {
+    if (!plugin.fieldTypes) continue;
+    for (const [typeName, component] of Object.entries(plugin.fieldTypes)) {
+      if (fieldTypes[typeName]) {
+        console.warn(
+          `[premast] Plugin "${plugin.name}" registers field type "${typeName}" which conflicts with another plugin. The later plugin will take precedence.`,
+        );
+      }
+      fieldTypes[typeName] = component;
+    }
+  }
+
+  const puckConfig = buildPuckConfig(allBlocks, allCategories, fieldInjections, rootFields, fieldTypes);
   const adminSidebarItems = buildAdminSidebarItems(validatedPlugins);
   const adminTokens = mergeAdminTokens(admin.theme);
   const adminTitle = admin.title || "CMS";

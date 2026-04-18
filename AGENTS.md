@@ -12,6 +12,9 @@ premast-packages/
     site-core/              → @premast/site-core (DB, API, auth, admin, plugin system)
     site-plugin-seo/        → @premast/site-plugin-seo (SEO fields, score analyzer)
     site-plugin-ui/         → @premast/site-plugin-ui (Ant Design UI blocks: Flex, Grid, Card, Tabs, etc.)
+    site-plugin-media/      → @premast/site-plugin-media (media library, DO-Spaces/S3 uploads, `type: "media"` field)
+    site-plugin-i18n/       → @premast/site-plugin-i18n (multilingual content + routing)
+    site-plugin-mcp/        → @premast/site-plugin-mcp (AI agent integration via MCP)
     site-plugin-*/          → additional plugins
     create-premast-site/    → CLI to scaffold, update, and add plugins to client sites
   templates/
@@ -151,6 +154,21 @@ src/
   server.js       → Server-safe exports (models, handlers)
 ```
 
+### site-plugin-media
+
+```
+src/
+  models/         → MediaFile schema
+  storage/        → DO Spaces (S3-compatible) client + presigner
+  handlers/       → Media API handlers (presign, create, list, get, delete)
+  fields/         → MediaPickerField (registered as Puck `type: "media"`)
+  client/         → Browser-side upload helper (presign → PUT → record)
+  admin/          → MediaAdminPage (library grid)
+  index.js        → Plugin factory: mediaPlugin()
+  editor.js       → Client-safe exports (MediaPickerField, mediaFieldTypes)
+  server.js       → Server-safe exports (model, auth-guarded apiRoutes)
+```
+
 ## Plugin Interface
 
 ```js
@@ -159,7 +177,10 @@ export function myPlugin(options = {}) {
     name: "my-plugin",       // required, unique string
     version: "1.0.0",        // optional semver
     blocks: {},               // Puck component definitions
-    fields: {},               // Field injections into root fields
+    fields: {},               // Field injections into existing blocks
+    fieldTypes: {},           // Custom Puck field types — { typeName: ReactComponent }.
+                              //   Blocks reference by name (`{ type: "media" }`);
+                              //   site-core rewrites to `{ type: "custom", render }`.
     rootFields: {},           // Root-level page fields (e.g. SEO meta fields)
     categories: {},           // Puck editor categories
     adminPages: [],           // Admin sidebar items { key, label, icon, path, component }

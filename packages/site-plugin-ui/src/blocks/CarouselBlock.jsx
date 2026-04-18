@@ -8,7 +8,7 @@ export const CarouselBlock = {
       type: "array",
       label: "Slides",
       arrayFields: {
-        imageUrl: { type: "text", label: "Image URL" },
+        imageUrl: { type: "media", label: "Image" },
         caption: { type: "text", label: "Caption" },
       },
       defaultItemProps: { imageUrl: "", caption: "" },

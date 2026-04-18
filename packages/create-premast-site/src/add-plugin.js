@@ -49,6 +49,17 @@ const AVAILABLE_PLUGINS = [
     serverImportName: "i18nPluginServer",
     pluginName: "i18n",
   },
+  {
+    value: "@premast/site-plugin-media",
+    label: "Media Plugin",
+    hint: "Media library + `media` field type (DO Spaces / S3 uploads)",
+    importName: "mediaPlugin",
+    importPath: "@premast/site-plugin-media",
+    configCall: "mediaPlugin()",
+    serverImportPath: "@premast/site-plugin-media/server",
+    serverImportName: "mediaPluginServer",
+    pluginName: "media",
+  },
 ];
 
 function detectPackageManager() {
