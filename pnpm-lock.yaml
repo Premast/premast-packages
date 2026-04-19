@@ -189,9 +189,6 @@ importers:
       '@aws-sdk/s3-request-presigner':
         specifier: ^3.600.0
         version: 3.1032.0
-      '@premast/site-core':
-        specifier: ^1.7.0
-        version: 1.7.1(@ant-design/icons@5.6.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@puckeditor/core@0.21.1(@floating-ui/dom@1.7.6)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(use-sync-external-store@1.6.0(react@19.2.4)))(antd@6.3.4(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(mongoose@9.3.3)(next@16.2.1(@playwright/test@1.59.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@puckeditor/core':
         specifier: '>=0.17.0'
         version: 0.21.1(@floating-ui/dom@1.7.6)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(use-sync-external-store@1.6.0(react@19.2.4))
@@ -1012,17 +1009,6 @@ packages:
 
   '@preact/signals-core@1.14.0':
     resolution: {integrity: sha512-AowtCcCU/33lFlh1zRFf/u+12rfrhtNakj7UpaGEsmMwUKpKWMVvcktOGcwBBNiB4lWrZWc01LhiyyzVklJyaQ==}
-
-  '@premast/site-core@1.7.1':
-    resolution: {integrity: sha512-I6NKGbY7W4TW9Vq0C5wtRiu/BlybyNaOGE65RKho7WI0XlWm+KBYvzJZNqapZWrukcEE5P23LG1mBWt1AJc/vw==, tarball: https://npm.pkg.github.com/download/@premast/site-core/1.7.1/165f8e95f6650c6339f6345db60ebe1895aabdee}
-    peerDependencies:
-      '@ant-design/icons': ^5.0.0
-      '@puckeditor/core': '>=0.17.0'
-      antd: ^6.0.0
-      mongoose: ^9.0.0
-      next: '>=15.0.0'
-      react: ^19.0.0
-      react-dom: ^19.0.0
 
   '@puckeditor/core@0.21.1':
     resolution: {integrity: sha512-Mk25WAHR8QLzHk+BtOO4bOu+y3pjzo0GowMHAJKNhrbxGVh3ETJx/bAZHaxA9dv8lKyuqK9a9AeRr7HYgg/sVw==}
@@ -5690,18 +5676,6 @@ snapshots:
       playwright: 1.59.1
 
   '@preact/signals-core@1.14.0': {}
-
-  '@premast/site-core@1.7.1(@ant-design/icons@5.6.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@puckeditor/core@0.21.1(@floating-ui/dom@1.7.6)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(use-sync-external-store@1.6.0(react@19.2.4)))(antd@6.3.4(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(mongoose@9.3.3)(next@16.2.1(@playwright/test@1.59.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
-    dependencies:
-      '@ant-design/icons': 5.6.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      '@puckeditor/core': 0.21.1(@floating-ui/dom@1.7.6)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(use-sync-external-store@1.6.0(react@19.2.4))
-      antd: 6.3.4(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      bcryptjs: 3.0.3
-      jose: 6.2.2
-      mongoose: 9.3.3
-      next: 16.2.1(@babel/core@7.29.0)(@playwright/test@1.59.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      react: 19.2.4
-      react-dom: 19.2.4(react@19.2.4)
 
   '@puckeditor/core@0.21.1(@floating-ui/dom@1.7.6)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(use-sync-external-store@1.6.0(react@19.2.4))':
     dependencies:

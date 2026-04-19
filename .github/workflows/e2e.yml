@@ -30,8 +30,17 @@ jobs:
         with:
           node-version: "22"
           cache: pnpm
+          # Configures ~/.npmrc with auth for @premast scope so pnpm
+          # can fetch transitive @premast/* references resolved in the
+          # lockfile. Even though workspace packages should resolve via
+          # workspace:* links, peer-dep snapshots can leave pinned
+          # versions the resolver still needs to fetch.
+          registry-url: "https://npm.pkg.github.com"
+          scope: "@premast"
 
       - name: Install dependencies
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: pnpm install --frozen-lockfile
 
       # Cache the Playwright browsers across runs — browsers are the

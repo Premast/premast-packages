@@ -17,7 +17,6 @@
   },
   "peerDependencies": {
     "@ant-design/icons": "^5.0.0",
-    "@premast/site-core": "^1.7.0",
     "@puckeditor/core": ">=0.17.0",
     "antd": "^5.0.0 || ^6.0.0",
     "mongoose": "^9.0.0",
