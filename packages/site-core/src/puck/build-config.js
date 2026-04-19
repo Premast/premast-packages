@@ -4,6 +4,9 @@ export { puckFieldOverrides, DrawerItemOverride, BlockSearchOverride } from "./P
 // type name that must either (a) be registered by a plugin via
 // `fieldTypes`, or (b) fall back to a plain text input so blocks that
 // reference a type from a not-yet-installed plugin stay usable.
+// Missing a real Puck type here silently rewrites it to `text` — most
+// visibly, omitting "slot" makes every slotted block render `undefined`
+// for its slot at SSR because Puck no longer injects the slot component.
 const PUCK_BUILTIN_FIELD_TYPES = new Set([
   "text",
   "textarea",
@@ -14,6 +17,7 @@ const PUCK_BUILTIN_FIELD_TYPES = new Set([
   "object",
   "external",
   "custom",
+  "slot",
 ]);
 
 const _fallbackWarned = new Set();
