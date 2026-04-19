@@ -1,6 +1,6 @@
 {
   "name": "@premast/site-plugin-i18n",
-  "version": "1.8.0",
+  "version": "1.8.1",
   "type": "module",
   "exports": {
     ".": "./src/index.js",
@@ -10,6 +10,9 @@
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.js"
   },
   "peerDependencies": {
     "@ant-design/icons": "^5.0.0 || ^6.0.0",

@@ -1,6 +1,6 @@
 {
   "name": "@premast/site-plugin-media",
-  "version": "1.8.0",
+  "version": "1.8.1",
   "description": "Media library for Premast: S3/DO-Spaces uploads, Media admin page, and a Puck `media` field type.",
   "type": "module",
   "exports": {
