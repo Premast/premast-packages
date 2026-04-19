@@ -7,6 +7,8 @@
 
 End-to-end Playwright tests that drive a real [`examples/full-site`](../../examples/full-site/) instance. Every first-party plugin is installed there — your specs exercise the full stack: Next.js → site-core → plugins → MongoDB.
 
+> **Contributing:** this suite is the required-status-check on every PR. Before opening a PR, read [CONTRIBUTING.md](../../CONTRIBUTING.md) — it specifies the PR flow, which changes need a new spec, and the release workflow that depends on this suite staying green.
+
 ## Architecture at a glance
 
 ```

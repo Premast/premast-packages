@@ -2,6 +2,17 @@
 
 > **Read this before making ANY changes.** Breaking these rules will crash the site.
 
+## Scope of these rules
+
+This document covers **this client site**. Changes to the CMS itself live in a different repo (`premast-packages`) and follow a different process — every change is a PR with required E2E checks, versioned releases, etc. See that repo's `CONTRIBUTING.md` if you need to fix a bug in a package or propose a new plugin.
+
+From inside this site you generally don't edit package code directly; you either:
+- Build features locally (new blocks in `components/puck/`, new pages in `app/`)
+- Pull the latest packages with `npm run update` (bumps all `@premast/*` deps)
+- Install a new plugin with `npm run add-plugin`
+
+If you find yourself wanting to edit `node_modules/@premast/...`, stop — that change belongs upstream.
+
 ## What This Project Is
 
 This is a **Premast CMS client site** — a Next.js application powered by shared `@premast/*` packages. The packages provide the CMS engine (database, API, admin panel, visual editor). This project customizes the look and content.

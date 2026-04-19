@@ -3,7 +3,7 @@ name: Publish Packages
 on:
   push:
     tags:
-      - "v*" # Triggers on version tags like v0.1.0, v1.0.0
+      - "v*" # v0.1.0, v1.8.1, etc.
 
 jobs:
   publish:
@@ -18,43 +18,41 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
+        with:
+          version: 10.6.5
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           registry-url: "https://npm.pkg.github.com"
+          scope: "@premast"
           cache: "pnpm"
 
       - name: Install dependencies
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: pnpm install --frozen-lockfile
 
-      - name: Build CLI (copy template)
-        run: pnpm build:cli
-
-      - name: Set version from tag
+      # Take the version from the tag so the released artifacts match
+      # what the tag promises. `sync-versions.js <version>` rewrites
+      # every package.json to the tag version; the `--fix` behaviour
+      # is implied when a version argument is passed.
+      - name: Sync package versions to tag
         run: |
           VERSION="${GITHUB_REF#refs/tags/v}"
           echo "Publishing version: $VERSION"
-          # Update all package versions to match the tag
-          pnpm -r exec -- npm version "$VERSION" --no-git-tag-version --allow-same-version
+          node scripts/sync-versions.js "$VERSION"
 
-      - name: Publish @premast/site-core
-        run: pnpm --filter @premast/site-core publish --no-git-checks --access restricted
+      - name: Build CLI (copy starter template)
+        run: pnpm build:cli
+
+      # `pnpm -r publish` picks up every workspace member that isn't
+      # `"private": true`, so adding a new @premast package only
+      # requires registering it in scripts/sync-versions.js — no
+      # workflow change needed. --no-git-checks skips the pre-publish
+      # clean-tree requirement (we just mutated package.json versions).
+      - name: Publish all packages
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Publish @premast/site-blocks
-        run: pnpm --filter @premast/site-blocks publish --no-git-checks --access restricted
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Publish @premast/site-plugin-seo
-        run: pnpm --filter @premast/site-plugin-seo publish --no-git-checks --access restricted
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Publish @premast/create-premast-site
-        run: pnpm --filter @premast/create-premast-site publish --no-git-checks --access restricted
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: pnpm -r publish --no-git-checks --access restricted

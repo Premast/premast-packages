@@ -276,9 +276,18 @@ Same blocks/categories but imported without mongoose. Used in `"use client"` edi
 | Global | key (header/footer), content, published | Shared elements |
 | User | email, passwordHash, name, role | Authentication |
 
-## Publishing
+## Contributing
 
-1. Bump versions in all `package.json` files
-2. `git tag -a vX.Y.Z -m "description"`
-3. `pnpm publish:all`
-4. `gh release create vX.Y.Z --title "..." --notes "..."`
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the authoritative PR and release process. The short version:
+
+- **Every change is a PR against `main`.** No direct commits.
+- **`main` stays green.** The `E2E` check is a required status check.
+- **Releases are their own PR** — a version bump commit, nothing else. Mixing features into a release commit is the failure mode.
+- **Patches ship on demand.** A regression in a published version gets a same-day patch (`release/x.y.Z+1`), not a wait for the next minor.
+- **Semver is enforced.** Major = breaking, minor = additive feature, patch = bug fix / docs / CI.
+
+If you're an AI agent working in this repo: read `CONTRIBUTING.md` in full before opening a PR. It specifies branch naming, spec requirements, commit message style, and the exact release checklist.
+
+### Publishing mechanics
+
+Releases publish automatically when a `v*` tag is pushed ([`.github/workflows/publish.yml`](.github/workflows/publish.yml)). For the full details — manual fallback, adding a new package, auth setup — see [docs/publishing.md](docs/publishing.md).
