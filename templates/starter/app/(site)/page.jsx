@@ -1,7 +1,7 @@
 import { Render } from "@puckeditor/core/rsc";
 import { siteConfig } from "@/site.config";
-import Hero from "@/components/pages/home/HeroBlock";
-import Content from "@/components/pages/home/ContentBlock";
+import Hero from "@/components/pages/Home/HeroBlock";
+import Content from "@/components/pages/Home/ContentBlock";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
