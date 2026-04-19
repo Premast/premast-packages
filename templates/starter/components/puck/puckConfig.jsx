@@ -1,5 +1,5 @@
-import { HeroBlock } from "../pages/home/HeroBlock";
-import { ContentBlock } from "../pages/home/ContentBlock";
+import { HeroBlock } from "../pages/Home/HeroBlock";
+import { ContentBlock } from "../pages/Home/ContentBlock";
 import { HeaderBlock } from "../layout/HeaderBlock";
 import { FooterBlock } from "../layout/FooterBlock";
 import { HeadingBlock } from "../ui/HeadingBlock";
