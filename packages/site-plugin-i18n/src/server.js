@@ -54,6 +54,7 @@ export function i18nPluginServer(config = {}) {
   const { defaultLocale = "en" } = config;
 
   return {
+    __isPremastPluginServer: true,
     apiRoutes: [
       // Pages / Globals / ContentItems duplication + group lookups
       { path: "i18n/duplicate", method: "POST", handler: duplicateToLocaleHandler },
@@ -98,4 +99,26 @@ export function i18nPluginServer(config = {}) {
       },
     },
   };
+}
+
+// Fail loud when the factory is spread (or Object.assign'd) without being
+// called first. Without these guards, `{ name: "i18n", ...i18nPluginServer }`
+// silently yields `{ name: "i18n" }` — no routes, no models, no hooks —
+// and the whole plugin becomes a no-op. See
+// https://github.com/premast/premast-packages/issues for the incident
+// that drove this guard.
+const SPREAD_GUARD_MESSAGE =
+  '[premast] i18nPluginServer is a factory — call it with your plugin config before spreading. Example:\n' +
+  '  const i18n = i18nPlugin({ locales: ["en", "ar"], defaultLocale: "en" });\n' +
+  '  // ...\n' +
+  '  { name: "i18n", ...i18nPluginServer(i18n.config) }';
+
+for (const key of ["apiRoutes", "models", "hooks"]) {
+  Object.defineProperty(i18nPluginServer, key, {
+    enumerable: true,
+    configurable: true,
+    get() {
+      throw new Error(SPREAD_GUARD_MESSAGE);
+    },
+  });
 }

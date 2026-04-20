@@ -47,6 +47,7 @@ const AVAILABLE_PLUGINS = [
     configCall: 'i18nPlugin({ locales: ["en"], defaultLocale: "en" })',
     serverImportPath: "@premast/site-plugin-i18n/server",
     serverImportName: "i18nPluginServer",
+    serverFactoryCall: 'i18nPluginServer({ locales: ["en"], defaultLocale: "en" })',
     pluginName: "i18n",
   },
   {
@@ -153,10 +154,16 @@ async function main() {
       // Add serverPlugins if plugin has server exports
       if (plugin.serverImportPath && !siteConfig.includes(plugin.serverImportPath)) {
         if (!siteConfig.includes("serverPlugins")) {
+          // Factory-style server exports (e.g. i18n) must be CALLED before
+          // being spread — spreading an uncalled function copies zero
+          // enumerable properties and registers no routes/models/hooks.
+          const spreadExpr = plugin.serverFactoryCall
+            ? plugin.serverFactoryCall
+            : plugin.serverImportName;
           // Add serverPlugins after plugins array closing
           siteConfig = siteConfig.replace(
             /plugins:\s*\[[\s\S]*?\],/,
-            (match) => `${match}\n  serverPlugins: async () => {\n    const { ${plugin.serverImportName} } = await import("${plugin.serverImportPath}");\n    return [{ name: "${plugin.pluginName}", ...${plugin.serverImportName} }];\n  },`,
+            (match) => `${match}\n  serverPlugins: async () => {\n    const { ${plugin.serverImportName} } = await import("${plugin.serverImportPath}");\n    return [{ name: "${plugin.pluginName}", ...${spreadExpr} }];\n  },`,
           );
         }
       }
