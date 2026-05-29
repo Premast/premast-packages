@@ -17,7 +17,7 @@ import { MediaAdminPage } from "./admin/MediaAdminPage.jsx";
 export function mediaPlugin(_options = {}) {
   return {
     name: "media",
-    version: "1.8.1",
+    version: "1.8.2",
 
     fieldTypes: {
       media: MediaPickerField,
