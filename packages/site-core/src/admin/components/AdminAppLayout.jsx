@@ -29,7 +29,7 @@ function buildThemeFromTokens(tokens) {
       colorText: t.text,
       colorTextSecondary: t.textMuted,
       borderRadius: 5,
-      fontSize: 13,
+      fontSize: 14,
       fontFamily: t.fontSans,
       controlHeight: 28,
       controlHeightSM: 22,

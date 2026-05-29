@@ -101,6 +101,18 @@ export function createSiteConfig({ blocks = {}, categories = {}, plugins = [], s
   async function resolveServerPlugins() {
     if (_serverPluginsCache) return _serverPluginsCache;
     const serverExts = serverPlugins ? await serverPlugins() : [];
+    // Fail loud if a plugin is a function. Spreading a factory into the
+    // serverPlugins array (e.g. `{ name: "i18n", ...i18nPluginServer }`)
+    // copies zero enumerable properties and silently drops all routes,
+    // models, and hooks. Catching the factory itself being pushed onto
+    // the list is a softer version of the same bug (`return [i18nPluginServer]`).
+    for (const ext of serverExts) {
+      if (typeof ext === "function") {
+        throw new Error(
+          `[premast] serverPlugins entry is a factory function — it must be called with its config before being added to serverPlugins. See the plugin's README for the expected shape.`,
+        );
+      }
+    }
     // Merge server extensions into validated plugins by name
     const merged = validatedPlugins.map((p) => {
       const ext = serverExts.find((s) => s.name === p.name);
