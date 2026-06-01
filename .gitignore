@@ -20,3 +20,7 @@ tests/e2e/.env
 tests/e2e/.env.*
 .mongodb-binaries/
 
+# Claude Code per-user state — paths, allowlists, runtime locks
+.claude/launch.json
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
