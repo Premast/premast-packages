@@ -54,9 +54,16 @@ npm run dev
 
 ### Update to Latest Version
 
+Make sure npm is authenticated with GitHub Packages first — otherwise the version check silently falls back to your installed version and reports it as "latest."
+
 ```bash
+# One-time: authenticate npm with your GitHub token (needs read:packages scope)
+npm config set //npm.pkg.github.com/:_authToken=$(gh auth token)
+
 npm run update
 ```
+
+> Putting the token in `.env.local` does not work — Next.js loads that file at runtime, but npm/shell don't read it. The token must be in `~/.npmrc` or exported in your shell.
 
 ## Architecture
 
