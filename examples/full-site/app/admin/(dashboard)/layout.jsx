@@ -19,6 +19,7 @@ export default function DashboardLayout({ children }) {
       <PuckProvider>
         <AdminAppLayout
           sidebarItems={stripComponents(siteConfig.adminSidebarItems)}
+          settingsSidebarItems={stripComponents(siteConfig.settingsSidebarItems)}
           adminTokens={siteConfig.adminTokens}
           title={siteConfig.adminTitle}
         >

@@ -1,6 +1,7 @@
 import { validatePlugin } from "./plugin.js";
 import { buildPuckConfig } from "./puck/build-config.js";
 import { buildAdminSidebarItems } from "./admin/build-sidebar.js";
+import { buildSettingsSidebarItems } from "./admin/build-settings-sidebar.js";
 import { mergeAdminTokens } from "./admin/admin-theme.js";
 import {
   autoRedirectAfterPageSave,
@@ -90,6 +91,7 @@ export function createSiteConfig({ blocks = {}, categories = {}, plugins = [], s
 
   const puckConfig = buildPuckConfig(allBlocks, allCategories, fieldInjections, rootFields, fieldTypes);
   const adminSidebarItems = buildAdminSidebarItems(validatedPlugins);
+  const settingsSidebarItems = buildSettingsSidebarItems(validatedPlugins);
   const adminTokens = mergeAdminTokens(admin.theme);
   const adminTitle = admin.title || "CMS";
   const adminFooter = admin.footer ?? "Developed by Premastlab";
@@ -180,6 +182,7 @@ export function createSiteConfig({ blocks = {}, categories = {}, plugins = [], s
   return {
     puckConfig,
     adminSidebarItems,
+    settingsSidebarItems,
     adminTokens,
     adminTitle,
     adminFooter,

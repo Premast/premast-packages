@@ -2,9 +2,11 @@
 
 import { ConfigProvider, Layout, theme as antdTheme } from "antd";
 import { Suspense, useMemo } from "react";
+import { usePathname } from "next/navigation";
 import { AdminSidebar } from "./AdminSidebar.jsx";
 import { AdminErrorBoundary } from "./AdminErrorBoundary.jsx";
 import { defaultAdminTokens } from "../admin-theme.js";
+import { CORE_SETTINGS_ITEMS } from "../build-settings-sidebar.js";
 import { useOptionalSession } from "../../auth/useSession.js";
 
 const { Content } = Layout;
@@ -90,15 +92,32 @@ function buildThemeFromTokens(tokens) {
   };
 }
 
-function AdminAppLayoutInner({ children, sidebarItems, title }) {
+function AdminAppLayoutInner({ children, sidebarItems, settingsSidebarItems, title }) {
   const { token } = antdTheme.useToken();
   const headerHeight = token.controlHeight * 2;
   const session = useOptionalSession();
+  const pathname = usePathname();
+
+  // Inside the Settings section, swap the main CMS sidebar for the dedicated
+  // settings nav with a "Back to CMS" link. Prefer the items passed from the
+  // host (so plugin settingsPages appear); fall back to the core items for
+  // sites whose admin layout hasn't been updated to pass the prop yet.
+  const inSettings = pathname?.startsWith("/admin/settings");
+  const settingsItems = settingsSidebarItems?.length ? settingsSidebarItems : CORE_SETTINGS_ITEMS;
 
   return (
     <Layout style={{ minHeight: "100vh" }} hasSider>
       <Suspense>
-        <AdminSidebar sidebarItems={sidebarItems} title={title} session={session} />
+        {inSettings ? (
+          <AdminSidebar
+            sidebarItems={settingsItems}
+            session={session}
+            backHref="/admin"
+            backLabel="Back to CMS"
+          />
+        ) : (
+          <AdminSidebar sidebarItems={sidebarItems} title={title} session={session} />
+        )}
       </Suspense>
       <Layout>
         <Content
@@ -120,7 +139,7 @@ function AdminAppLayoutInner({ children, sidebarItems, title }) {
   );
 }
 
-export function AdminAppLayout({ children, sidebarItems = [], title = "CMS", adminTokens }) {
+export function AdminAppLayout({ children, sidebarItems = [], settingsSidebarItems = [], title = "CMS", adminTokens }) {
   const tokens = useMemo(
     () => ({ ...defaultAdminTokens, ...adminTokens }),
     [adminTokens],
@@ -129,7 +148,7 @@ export function AdminAppLayout({ children, sidebarItems = [], title = "CMS", adm
 
   return (
     <ConfigProvider theme={themeConfig}>
-      <AdminAppLayoutInner sidebarItems={sidebarItems} title={title}>
+      <AdminAppLayoutInner sidebarItems={sidebarItems} settingsSidebarItems={settingsSidebarItems} title={title}>
         {children}
       </AdminAppLayoutInner>
     </ConfigProvider>

@@ -56,7 +56,7 @@ function buildMenuItems(sidebarItems, userRole, contentTypes) {
       });
 }
 
-export function AdminSidebar({ sidebarItems = [], title = "CMS", session }) {
+export function AdminSidebar({ sidebarItems = [], title = "CMS", session, backHref, backLabel = "Back to CMS" }) {
    const pathname = usePathname();
    const searchParams = useSearchParams();
    const router = useRouter();
@@ -105,21 +105,41 @@ export function AdminSidebar({ sidebarItems = [], title = "CMS", session }) {
          }}
       >
          <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
-         <div
-            style={{
-               padding: "0 16px",
-               color: token.colorText,
-               fontWeight: 600,
-               fontSize: 14,
-               letterSpacing: "0.02em",
-               borderBottom: `1px solid ${token.colorBorderSecondary}`,
-               height: 55,
-               display: "flex",
-               alignItems: "center",
-            }}
-         >
-            {title}
-         </div>
+         {backHref ? (
+            <Link
+               href={backHref}
+               style={{
+                  padding: "0 16px",
+                  color: token.colorTextSecondary,
+                  fontWeight: 500,
+                  fontSize: 13,
+                  borderBottom: `1px solid ${token.colorBorderSecondary}`,
+                  height: 55,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+               }}
+            >
+               <AntIcons.ArrowLeftOutlined />
+               <span>{backLabel}</span>
+            </Link>
+         ) : (
+            <div
+               style={{
+                  padding: "0 16px",
+                  color: token.colorText,
+                  fontWeight: 600,
+                  fontSize: 14,
+                  letterSpacing: "0.02em",
+                  borderBottom: `1px solid ${token.colorBorderSecondary}`,
+                  height: 55,
+                  display: "flex",
+                  alignItems: "center",
+               }}
+            >
+               {title}
+            </div>
+         )}
          <Menu
             theme="dark"
             mode="inline"

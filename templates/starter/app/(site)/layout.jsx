@@ -1,4 +1,5 @@
 import { Render } from "@puckeditor/core/rsc";
+import { PremastSiteSettings } from "@premast/site-core/site-settings";
 import { siteConfig } from "@/site.config";
 import Header from "@/components/layout/HeaderBlock";
 import Footer from "@/components/layout/FooterBlock";
@@ -41,6 +42,7 @@ export default async function SiteLayout({ children }) {
 
   return (
     <div className={styles.shell}>
+      <PremastSiteSettings siteConfig={siteConfig} />
       {headerData ? <Render config={siteConfig.puckConfig} data={headerData} /> : <Header />}
       <main className={styles.main}>{children}</main>
       {footerData ? <Render config={siteConfig.puckConfig} data={footerData} /> : <Footer />}
