@@ -57,11 +57,12 @@ const DYNAMIC_ROUTES = [
  * @returns {{ Component, props, wrapSuspense? } | null}
  */
 export function resolveAdminPage(pathname, siteConfig) {
-  // 1. Static match from sidebar items (both core and plugin pages)
-  // Flatten: some items have children (e.g. content-nav group)
-  const allItems = siteConfig.adminSidebarItems.flatMap(
-    (i) => (i.children ? [i, ...i.children] : [i])
-  );
+  // 1. Static match from sidebar items (main + settings section, core + plugin).
+  // Flatten: some items have children (e.g. content-nav group).
+  const allItems = [
+    ...siteConfig.adminSidebarItems,
+    ...(siteConfig.settingsSidebarItems || []),
+  ].flatMap((i) => (i.children ? [i, ...i.children] : [i]));
   const item = allItems.find(
     (i) => i.path === pathname && i.component
   );

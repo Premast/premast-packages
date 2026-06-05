@@ -147,6 +147,83 @@ function showDiff(oldContent, newContent, filePath) {
   return true;
 }
 
+const SITE_SETTINGS_IMPORT =
+  'import { PremastSiteSettings } from "@premast/site-core/site-settings";';
+const SITE_SETTINGS_TAG = "<PremastSiteSettings siteConfig={siteConfig} />";
+const SITE_SETTINGS_LAYOUT = "app/(site)/layout.jsx";
+
+/** Print copy-paste instructions when we can't safely auto-wire the layout. */
+function printSiteSettingsSnippet() {
+  console.log(pc.yellow(`\n  Add these two lines to ${SITE_SETTINGS_LAYOUT} to enable`));
+  console.log(pc.yellow(`  analytics / site-wide settings injection on public pages:`));
+  console.log(pc.dim("\n  1) with the other imports:"));
+  console.log(pc.green(`     ${SITE_SETTINGS_IMPORT}`));
+  console.log(pc.dim("\n  2) inside the returned JSX (anywhere in the public tree):"));
+  console.log(pc.green(`     ${SITE_SETTINGS_TAG}`));
+  console.log();
+}
+
+/** Build the auto-wired layout content, or null if we can't place it safely. */
+function buildWiredLayout(content) {
+  // 1) import — after the first import statement.
+  const firstImport = content.match(/^import .*$/m);
+  if (!firstImport) return null;
+  const importEnd = firstImport.index + firstImport[0].length;
+  let next = content.slice(0, importEnd) + "\n" + SITE_SETTINGS_IMPORT + content.slice(importEnd);
+
+  // 2) tag — right after the first single-line opening tag inside `return (`.
+  const ret = next.match(/return \(\s*\n([ \t]*)(<[^\n]*>)\s*\n/);
+  if (!ret) return null;
+  const indent = ret[1];
+  const openTagEnd = ret.index + ret[0].length;
+  next = next.slice(0, openTagEnd) + `${indent}  ${SITE_SETTINGS_TAG}\n` + next.slice(openTagEnd);
+  return next;
+}
+
+/**
+ * Wire the generic <PremastSiteSettings/> seam into the public layout. One-time
+ * step: future site-wide settings add an injector in site-core, not another
+ * layout edit. Best-effort auto-inject with confirmation; falls back to printing
+ * the snippet when the layout can't be matched safely.
+ */
+async function wireSiteSettings(projectDir) {
+  const layoutPath = join(projectDir, SITE_SETTINGS_LAYOUT);
+  if (!existsSync(layoutPath)) return;
+
+  const content = readFileSync(layoutPath, "utf-8");
+  if (content.includes("PremastSiteSettings")) {
+    p.log.success("Site settings injection already wired.");
+    return;
+  }
+
+  const wired = buildWiredLayout(content);
+  if (!wired) {
+    p.log.warn("Couldn't safely auto-wire the public layout.");
+    printSiteSettingsSnippet();
+    return;
+  }
+
+  p.log.info(pc.bold(`\n${SITE_SETTINGS_LAYOUT} — enable site-wide settings injection`));
+  showDiff(content, wired, SITE_SETTINGS_LAYOUT);
+
+  const action = await p.select({
+    message: `Wire <PremastSiteSettings/> into ${SITE_SETTINGS_LAYOUT}?`,
+    options: [
+      { value: "apply", label: "Apply", hint: "insert the import + tag" },
+      { value: "backup", label: "Backup & Apply", hint: "save .bak, then apply" },
+      { value: "skip", label: "Skip", hint: "I'll add it manually" },
+    ],
+  });
+
+  if (p.isCancel(action) || action === "skip") {
+    printSiteSettingsSnippet();
+    return;
+  }
+  if (action === "backup") writeFileSync(layoutPath + ".bak", content);
+  writeFileSync(layoutPath, wired);
+  console.log(`  ${pc.green("✓")} Wired ${SITE_SETTINGS_LAYOUT}`);
+}
+
 /** Read .premast.json metadata. */
 function readMeta(projectDir) {
   const metaPath = join(projectDir, PREMAST_META_FILE);
@@ -356,7 +433,11 @@ async function main() {
     }
   }
 
-  // Step 3: Update metadata
+  // Step 3: Wire the site-settings injection seam into the public layout
+  p.log.step("Checking site-settings injection wiring...");
+  await wireSiteSettings(projectDir);
+
+  // Step 4: Update metadata
   writeMeta(projectDir, {
     templateVersion: templateVersion,
     createdAt: meta.createdAt || new Date().toISOString(),

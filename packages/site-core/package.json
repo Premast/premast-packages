@@ -8,6 +8,7 @@
     "./admin": "./src/admin/index.js",
     "./admin/*": "./src/admin/*",
     "./theme": "./src/theme/index.js",
+    "./site-settings": "./src/site-settings/index.js",
     "./db": "./src/db/index.js",
     "./api": "./src/api/index.js",
     "./puck": "./src/puck/build-config.js",
