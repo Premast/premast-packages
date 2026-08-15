@@ -1,6 +1,6 @@
 {
   "name": "@premast/site-plugin-symbols",
-  "version": "1.9.0",
+  "version": "1.10.0",
   "description": "Reusable Components (Symbols) for Premast: define a Puck section once, reference it across pages, edit-once-update-everywhere.",
   "type": "module",
   "exports": {
