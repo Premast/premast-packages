@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Card, Typography, Descriptions, Switch, Spin, message } from "antd";
-
-const { Title } = Typography;
+import { Card, Descriptions, Switch, Spin, message } from "antd";
+import { AdminPageHeader, AdminPageBody } from "./AdminPageHeader.jsx";
 
 async function apiFetch(path, options = {}) {
   const res = await fetch(`/api/${path}`, {
@@ -49,11 +48,22 @@ export function SettingsPage() {
     }
   }
 
-  if (loading) return <Spin style={{ display: "block", margin: "48px auto" }} />;
+  if (loading) {
+    return (
+      <div>
+        <AdminPageHeader title="Settings" />
+        <Spin style={{ display: "block", margin: "48px auto" }} />
+      </div>
+    );
+  }
 
   return (
-    <div style={{ padding: 24 }}>
-      <Title level={4} style={{ marginBottom: 24 }}>Settings</Title>
+    <div>
+      <AdminPageHeader
+        title="Settings"
+        description="Site-wide configuration."
+      />
+      <AdminPageBody>
 
       <Card title="SEO & Crawling" style={{ marginBottom: 24 }}>
         <Descriptions column={1} bordered>
@@ -78,6 +88,7 @@ export function SettingsPage() {
           <Descriptions.Item label="Editor">Puck Visual Editor</Descriptions.Item>
         </Descriptions>
       </Card>
+      </AdminPageBody>
     </div>
   );
 }

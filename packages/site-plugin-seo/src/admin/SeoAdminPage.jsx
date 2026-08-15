@@ -1,15 +1,29 @@
 "use client";
 
+import { Empty, Typography } from "antd";
+import { AdminPageHeader, AdminPageBody } from "@premast/site-core/admin";
+
+const { Text } = Typography;
+
 export function SeoAdminPage() {
   return (
-    <div style={{ padding: 24 }}>
-      <h3 style={{ fontSize: 20, fontWeight: 600, marginBottom: 8 }}>SEO Settings</h3>
-      <p style={{ color: "#888" }}>
-        Manage site-wide SEO settings, default meta tags, and sitemap configuration.
-      </p>
-      <p style={{ color: "#888" }}>
-        This is a placeholder — extend this page with your SEO configuration forms.
-      </p>
+    <div>
+      <AdminPageHeader
+        title="SEO"
+        description="Site-wide SEO settings, default meta tags, and sitemap configuration."
+      />
+      <AdminPageBody>
+        <Empty
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+          description="No SEO settings here yet"
+          style={{ padding: "48px 0" }}
+        >
+          <Text type="secondary">
+            Per-page SEO already works from the page editor's sidebar. This
+            screen is a placeholder for site-wide defaults.
+          </Text>
+        </Empty>
+      </AdminPageBody>
     </div>
   );
 }

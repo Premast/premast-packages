@@ -2,6 +2,8 @@
 
 import { Input, InputNumber, Select, Radio } from "antd";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { usePuckConfigOptional } from "../admin/PuckConfigContext.jsx";
+import { resolveBlockLabel } from "./block-label.js";
 
 const fieldStyle = {
    width: "100%",
@@ -232,10 +234,8 @@ const defaultIcon = "M4 4h16v16H4z";
  */
 export function DrawerItemOverride({ children, name }) {
    const iconPath = blockIcons[name] || defaultIcon;
-   const label = name
-      .replace(/Block$/, "")
-      .replace(/([A-Z])/g, " $1")
-      .trim();
+   const puckConfig = usePuckConfigOptional();
+   const label = resolveBlockLabel(puckConfig, name);
 
    return (
       <div

@@ -36,6 +36,15 @@ export default async function SiteLayout({ children }) {
     ]);
     headerData = parsePuckData(headerDoc?.content);
     footerData = parsePuckData(footerDoc?.content);
+
+    // Globals go through the same render hooks as pages. Without this a
+    // reusable component placed in the header/footer stays an unexpanded
+    // reference and renders nothing on the live site, even though the
+    // editor lets you put one there.
+    [headerData, footerData] = await Promise.all([
+      headerData ? siteConfig.runBeforePageRender(headerData, headerDoc) : null,
+      footerData ? siteConfig.runBeforePageRender(footerData, footerDoc) : null,
+    ]);
   } catch {
     /* DB offline — fallback to static components */
   }

@@ -2,9 +2,10 @@
 export { AdminAppLayout } from "./components/AdminAppLayout.jsx";
 export { AdminSidebar } from "./components/AdminSidebar.jsx";
 export { AdminErrorBoundary } from "./components/AdminErrorBoundary.jsx";
+export { AdminPageHeader, AdminPageBody } from "./components/AdminPageHeader.jsx";
 
 // Puck config context (client-safe)
-export { PuckConfigProvider, usePuckConfig } from "./PuckConfigContext.jsx";
+export { PuckConfigProvider, usePuckConfig, usePuckConfigOptional } from "./PuckConfigContext.jsx";
 
 // Auth components
 export { AuthWrapper } from "./components/auth/AuthWrapper.jsx";
