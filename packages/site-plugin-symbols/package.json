@@ -1,0 +1,22 @@
+{
+  "name": "@premast/site-plugin-symbols",
+  "version": "1.9.0",
+  "description": "Reusable Components (Symbols) for Premast: define a Puck section once, reference it across pages, edit-once-update-everywhere.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.js",
+    "./server": "./src/server.js",
+    "./editor": "./src/editor.js"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "peerDependencies": {
+    "@ant-design/icons": "^5.0.0",
+    "@puckeditor/core": ">=0.17.0",
+    "antd": "^5.0.0 || ^6.0.0",
+    "mongoose": "^9.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  }
+}

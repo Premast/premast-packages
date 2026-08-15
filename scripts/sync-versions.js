@@ -16,7 +16,7 @@
  *   "prepublish:all": "node scripts/sync-versions.js"
  */
 
-import { readFileSync, writeFileSync, existsSync } from "fs";
+import { readFileSync, writeFileSync, existsSync, readdirSync } from "fs";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 
@@ -30,6 +30,7 @@ const PACKAGES = [
   "packages/site-plugin-mcp",
   "packages/site-plugin-i18n",
   "packages/site-plugin-media",
+  "packages/site-plugin-symbols",
   "packages/create-premast-site",
 ];
 
@@ -42,6 +43,29 @@ const targetVersion = process.argv[2] && !process.argv[2].startsWith("-")
 const shouldFix = process.argv.includes("--fix") || (process.argv[2] && !process.argv[2].startsWith("-"));
 
 let drifted = false;
+
+// A publishable package missing from PACKAGES is invisible to this script:
+// it silently keeps its old version through a release, so publishing either
+// retries an already-published version and fails, or ships stale metadata.
+// Catch that here rather than at publish time.
+const packagesDir = resolve(ROOT, "packages");
+if (existsSync(packagesDir)) {
+  for (const entry of readdirSync(packagesDir, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    const dir = `packages/${entry.name}`;
+    if (PACKAGES.includes(dir)) continue;
+
+    const pkgPath = resolve(packagesDir, entry.name, "package.json");
+    if (!existsSync(pkgPath)) continue;
+    const pkg = JSON.parse(readFileSync(pkgPath, "utf-8"));
+    if (pkg.private === true) continue;
+
+    console.error(
+      `  ✗ ${pkg.name} (${dir}) is publishable but missing from PACKAGES in scripts/sync-versions.js`,
+    );
+    drifted = true;
+  }
+}
 
 for (const pkgDir of PACKAGES) {
   const pkgPath = resolve(ROOT, pkgDir, "package.json");

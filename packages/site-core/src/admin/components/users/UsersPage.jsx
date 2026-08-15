@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Table, Tag, Modal, Form, Input, Select, message, Flex, Popconfirm } from "antd";
+import { Button, Table, Tag, Modal, Form, Input, Select, message, Flex, Popconfirm, Empty } from "antd";
 import { PlusOutlined, DeleteOutlined, KeyOutlined, ReloadOutlined } from "@ant-design/icons";
 import { useEffect, useState } from "react";
 
@@ -183,6 +183,11 @@ export function UsersPage() {
           loading={loading}
           pagination={false}
           size="small"
+          locale={{
+            emptyText: (
+              <Empty description="No users yet" style={{ padding: "32px 0" }} />
+            ),
+          }}
         />
       </div>
 

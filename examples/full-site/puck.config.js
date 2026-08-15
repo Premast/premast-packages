@@ -12,6 +12,7 @@ import { uiPlugin } from "@premast/site-plugin-ui";
 import { i18nPlugin } from "@premast/site-plugin-i18n";
 import { mediaPlugin } from "@premast/site-plugin-media";
 import { mcpPlugin } from "@premast/site-plugin-mcp";
+import { symbolsPlugin } from "@premast/site-plugin-symbols";
 import { SeoScoreField, SearchIndexingField } from "@premast/site-plugin-seo/editor";
 import { buildPuckConfig } from "@premast/site-core/puck";
 
@@ -21,6 +22,7 @@ const plugins = [
   i18nPlugin({ locales: ["en", "ar"], defaultLocale: "en" }),
   mediaPlugin(),
   mcpPlugin(),
+  symbolsPlugin(),
 ];
 
 const rootFields = {};

@@ -34,6 +34,7 @@ const nextConfig = {
     "@premast/site-plugin-i18n",
     "@premast/site-plugin-media",
     "@premast/site-plugin-mcp",
+    "@premast/site-plugin-symbols",
   ],
   // Note: build and dev use --webpack flag for resolve.alias support.
   // Turbopack does not support absolute-path aliases needed for pnpm.

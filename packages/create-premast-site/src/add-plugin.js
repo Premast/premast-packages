@@ -5,6 +5,8 @@ import pc from "picocolors";
 import { resolve, join } from "path";
 import { existsSync, readFileSync, writeFileSync } from "fs";
 import { execSync } from "child_process";
+import { withServerPlugin } from "./server-plugins.js";
+import { withEditorProvider } from "./puck-provider.js";
 
 const AVAILABLE_PLUGINS = [
   {
@@ -60,6 +62,23 @@ const AVAILABLE_PLUGINS = [
     serverImportPath: "@premast/site-plugin-media/server",
     serverImportName: "mediaPluginServer",
     pluginName: "media",
+  },
+  {
+    value: "@premast/site-plugin-symbols",
+    label: "Symbols Plugin",
+    hint: "Reusable Components: build a section once, reference it on any page",
+    importName: "symbolsPlugin",
+    importPath: "@premast/site-plugin-symbols",
+    configCall: "symbolsPlugin()",
+    serverImportPath: "@premast/site-plugin-symbols/server",
+    serverImportName: "symbolsPluginServer",
+    pluginName: "symbols",
+    // Registers one palette block per published component, which means
+    // extending the Puck config at runtime — needs its own provider.
+    editorProvider: {
+      importName: "SymbolsPuckConfigProvider",
+      importPath: "@premast/site-plugin-symbols/editor",
+    },
   },
 ];
 
@@ -132,6 +151,8 @@ async function main() {
   s.stop("package.json updated.");
 
   // 2. Update site.config.js
+  const serverWiringFailures = [];
+  const providerWiringFailures = [];
   s.start("Updating site.config.js...");
   if (existsSync(siteConfigPath)) {
     let siteConfig = readFileSync(siteConfigPath, "utf-8");
@@ -153,24 +174,49 @@ async function main() {
       }
       // Add serverPlugins if plugin has server exports
       if (plugin.serverImportPath && !siteConfig.includes(plugin.serverImportPath)) {
-        if (!siteConfig.includes("serverPlugins")) {
-          // Factory-style server exports (e.g. i18n) must be CALLED before
-          // being spread — spreading an uncalled function copies zero
-          // enumerable properties and registers no routes/models/hooks.
-          const spreadExpr = plugin.serverFactoryCall
-            ? plugin.serverFactoryCall
-            : plugin.serverImportName;
-          // Add serverPlugins after plugins array closing
-          siteConfig = siteConfig.replace(
-            /plugins:\s*\[[\s\S]*?\],/,
-            (match) => `${match}\n  serverPlugins: async () => {\n    const { ${plugin.serverImportName} } = await import("${plugin.serverImportPath}");\n    return [{ name: "${plugin.pluginName}", ...${spreadExpr} }];\n  },`,
-          );
+        const updated = withServerPlugin(siteConfig, plugin);
+        if (updated) {
+          siteConfig = updated;
+        } else {
+          serverWiringFailures.push(plugin);
         }
       }
     }
     writeFileSync(siteConfigPath, siteConfig);
   }
   s.stop("site.config.js updated.");
+
+  for (const plugin of serverWiringFailures) {
+    const spreadExpr = plugin.serverFactoryCall || plugin.serverImportName;
+    p.log.warn(
+      `Couldn't wire ${pc.bold(plugin.label)} into serverPlugins automatically.\n` +
+        `Add this inside the serverPlugins loader in site.config.js:\n` +
+        pc.dim(`  const { ${plugin.serverImportName} } = await import("${plugin.serverImportPath}");\n`) +
+        pc.dim(`  // then add to the returned array:\n`) +
+        pc.dim(`  { name: "${plugin.pluginName}", ...${spreadExpr} }`),
+    );
+  }
+
+  // 2b. Swap the admin editor's Puck provider when a plugin needs one.
+  const providerPath = join(cwd, "app/admin/(dashboard)/PuckProvider.jsx");
+  for (const plugin of plugins) {
+    if (!plugin.editorProvider) continue;
+    if (!existsSync(providerPath)) {
+      providerWiringFailures.push(plugin);
+      continue;
+    }
+    const updated = withEditorProvider(readFileSync(providerPath, "utf-8"), plugin);
+    if (updated) writeFileSync(providerPath, updated);
+    else providerWiringFailures.push(plugin);
+  }
+
+  for (const plugin of providerWiringFailures) {
+    p.log.warn(
+      `Couldn't switch the editor provider for ${pc.bold(plugin.label)}.\n` +
+        `In app/admin/(dashboard)/PuckProvider.jsx, replace PuckConfigProvider with:\n` +
+        pc.dim(`  import { ${plugin.editorProvider.importName} } from "${plugin.editorProvider.importPath}";`),
+    );
+  }
 
   // 3. Update puck.config.js
   s.start("Updating puck.config.js...");

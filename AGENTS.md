@@ -15,6 +15,7 @@ premast-packages/
     site-plugin-media/      → @premast/site-plugin-media (media library, DO-Spaces/S3 uploads, `type: "media"` field)
     site-plugin-i18n/       → @premast/site-plugin-i18n (multilingual content + routing)
     site-plugin-mcp/        → @premast/site-plugin-mcp (AI agent integration via MCP)
+    site-plugin-symbols/    → @premast/site-plugin-symbols (reusable components/symbols: define a section once, reference it across pages)
     site-plugin-*/          → additional plugins
     create-premast-site/    → CLI to scaffold, update, and add plugins to client sites
   templates/
@@ -168,6 +169,63 @@ src/
   editor.js       → Client-safe exports (MediaPickerField, mediaFieldTypes)
   server.js       → Server-safe exports (model, auth-guarded apiRoutes)
 ```
+
+### site-plugin-symbols
+
+Reusable Components (like Webflow Symbols / Figma components): a section is
+saved once and referenced from pages by id, so editing it updates every page.
+
+```
+src/
+  models/         → Symbol schema (a free-form Global — name/slug/content Puck blob)
+  handlers/       → Symbol CRUD API handlers
+  hooks/          → expand-symbols.js — beforePageRender hook that inlines a
+                    referenced symbol's content at render (with id namespacing).
+                    Walks the whole tree: top-level content, `slot` props
+                    (a component dropped into Flex/Grid/Col lives there) and
+                    legacy `zones`. Recurses into symbols that reference other
+                    symbols, breaking cycles, and caches each symbol per render.
+  fields/         → SymbolPickerField (registered as Puck `type: "symbol"`)
+                    SymbolInfoField: read-only sidebar panel for a selected
+                    reference (name, published/draft, usage count, "Edit
+                    component"). Generated types have no editable props, so
+                    without it the properties panel renders empty.
+  editor/         → SymbolsPuckConfigProvider: fetches published symbols at
+                    runtime and registers each as its own Puck palette block
+                    (`SymbolRef_<id>`, symbolId preset via defaultProps).
+                    Swap it in for PuckConfigProvider in the app's
+                    app/admin/(dashboard)/PuckProvider.jsx.
+  blocks/         → SymbolBlock (the reference block) + SymbolBlockPreview,
+                    the editor-only preview. It renders the component's real
+                    content via Puck's `<Render>` (same config the live site
+                    uses) so the editor is WYSIWYG; the preview is inert
+                    (pointer-events: none) because a component is edited on
+                    its own page, not inline.
+  admin/          → SymbolsAdminPage: list + per-symbol Puck editor
+                    (self-contained via `?id=` search param, no core route)
+                    component-config.js derives the editor's Puck config
+                    from the page config: strips page-level root fields
+                    (SEO/canonical/structured data/language) and removes
+                    the Component block so components can't nest.
+  index.js        → Plugin factory: symbolsPlugin() (blocks, fieldTypes, adminPages)
+  editor.js       → Client-safe exports (SymbolPickerField, symbolFieldTypes)
+  server.js       → Server-safe exports (model, apiRoutes, beforePageRender hook)
+```
+
+How it works: a page holds a *reference*, in one of two shapes — the generic
+`SymbolBlock` with `{ symbolId }`, or a palette-generated `SymbolRef_<id>`
+type (Puck inserts by type, so the type is how a drag-and-drop carries which
+component was chosen). On the front end the `beforePageRender` hook resolves
+either shape and replaces it with the published symbol's content array before
+`<Render>`, namespacing ids so the same component can appear twice.
+
+v1 is a pure symbol (no per-instance overrides). Globals (header/footer)
+are rendered in `layout.jsx`, which must call `runBeforePageRender` on the
+header/footer data the same way `page.jsx` does — otherwise a component
+placed there stays an unexpanded reference and renders nothing, even
+though the editor allows it. Deleting a component
+that's still referenced leaves those references rendering nothing, so the
+admin list checks `/api/symbols/:id/usage` before confirming a delete.
 
 ## Plugin Interface
 

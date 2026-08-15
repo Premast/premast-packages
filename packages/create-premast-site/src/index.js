@@ -6,6 +6,7 @@ import { resolve, join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { existsSync, mkdirSync, cpSync, readFileSync, writeFileSync } from "fs";
 import { execSync, spawn } from "child_process";
+import { withEditorProvider } from "./puck-provider.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -79,6 +80,23 @@ const AVAILABLE_PLUGINS = [
     serverImportPath: "@premast/site-plugin-i18n/server",
     serverImportName: "i18nPluginServer",
     pluginName: "i18n",
+  },
+  {
+    value: "@premast/site-plugin-symbols",
+    label: "Symbols Plugin",
+    hint: "Reusable Components: build a section once, reference it on any page",
+    importName: "symbolsPlugin",
+    importPath: "@premast/site-plugin-symbols",
+    configCall: "symbolsPlugin()",
+    serverImportPath: "@premast/site-plugin-symbols/server",
+    serverImportName: "symbolsPluginServer",
+    pluginName: "symbols",
+    // Registers one palette block per published component, which means
+    // extending the Puck config at runtime — needs its own provider.
+    editorProvider: {
+      importName: "SymbolsPuckConfigProvider",
+      importPath: "@premast/site-plugin-symbols/editor",
+    },
   },
 ];
 
@@ -227,6 +245,7 @@ async function main() {
     "@premast/site-plugin-ui": "site-plugin-ui",
     "@premast/site-plugin-mcp": "site-plugin-mcp",
     "@premast/site-plugin-i18n": "site-plugin-i18n",
+    "@premast/site-plugin-symbols": "site-plugin-symbols",
   };
 
   for (const dep of Object.keys(pkg.dependencies)) {
@@ -283,6 +302,16 @@ async function main() {
   const puckConfigPath = join(projectDir, "puck.config.js");
   const puckConfig = generatePuckConfig(selectedPlugins);
   writeFileSync(puckConfigPath, puckConfig);
+
+  // 3c. Swap the admin editor's Puck provider when a plugin needs one
+  // (symbols registers its palette blocks at runtime, so the plain
+  // PuckConfigProvider would leave that half of the plugin dead).
+  const providerPath = join(projectDir, "app/admin/(dashboard)/PuckProvider.jsx");
+  for (const plugin of selectedPlugins) {
+    if (!plugin.editorProvider || !existsSync(providerPath)) continue;
+    const updated = withEditorProvider(readFileSync(providerPath, "utf-8"), plugin);
+    if (updated) writeFileSync(providerPath, updated);
+  }
 
   // 4. Generate next.config.mjs with correct transpilePackages
   const nextConfigPath = join(projectDir, "next.config.mjs");
@@ -499,8 +528,17 @@ const allCategories = { ...baseCategories };
 for (const plugin of plugins) {
   if (plugin.categories) Object.assign(allCategories, plugin.categories);
 }
+
+// Collect custom field types registered by plugins.
+// Blocks can reference these by name (e.g. \`{ type: "media" }\`) and
+// the config builder rewrites them to Puck's \`{ type: "custom", render }\`.
+// Without this, those fields silently fall back to plain text.
+const fieldTypes = {};
+for (const plugin of plugins) {
+  if (plugin.fieldTypes) Object.assign(fieldTypes, plugin.fieldTypes);
+}
 ${seoFieldSection}
-export const puckConfig = buildPuckConfig(allBlocks, allCategories, {}, rootFields);
+export const puckConfig = buildPuckConfig(allBlocks, allCategories, {}, rootFields, fieldTypes);
 `;
 }
 
