@@ -21,7 +21,7 @@ import { SymbolsAdminPage } from "./admin/SymbolsAdminPage.jsx";
 export function symbolsPlugin(_options = {}) {
   return {
     name: "symbols",
-    version: "1.9.0",
+    version: "1.10.0",
 
     blocks: { ...symbolBlock },
 
