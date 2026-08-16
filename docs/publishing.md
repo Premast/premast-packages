@@ -96,9 +96,10 @@ If you're standing up a fresh monorepo:
 ## When publishing fails
 
 - **401 Unauthorized** — token doesn't have `write:packages` scope. Regenerate.
+- **403 `permission_denied: write_package`** — `GITHUB_TOKEN` can only write to packages **linked to this repository**. Packages first published by hand aren't linked, so Actions can't write to them no matter what `permissions:` says. This silently dropped every plugin from v1.8.2, v1.9.0 and v1.10.0 while `site-core` published fine. Two fixes: link the package (org → Packages → the package → *Package settings* → *Manage Actions access* → add this repo with **Write**), or set the `NPM_PUBLISH_TOKEN` secret to a PAT with `write:packages` — the workflow prefers it and falls back to `GITHUB_TOKEN`.
 - **409 Conflict / version exists** — the version is already published. Versions are immutable; bump and re-release.
 - **Drift error from sync-versions** — package.json versions are out of sync. Run `--fix` and commit the result.
-- **Workflow skipped some packages** — the workflow no longer hardcodes package names (it uses `pnpm -r publish`), so this shouldn't recur. If it does, check that the new package isn't `"private": true`.
+- **Workflow skipped some packages** — `pnpm -r publish` **stops at the first failure**, so one unpublishable package hides every package after it. The workflow's final step re-queries the registry for each non-private package at the tag version and fails the run if any is missing, so a partial publish can't look green. If it fires, publish the missing ones via Path B and fix the underlying auth.
 
 ## See also
 
