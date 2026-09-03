@@ -16,7 +16,7 @@ import { StepsBlock } from "./blocks/StepsBlock.jsx";
 export function uiPlugin(options = {}) {
   return {
     name: "ui",
-    version: "1.0.0",
+    version: "1.11.0",
 
     blocks: {
       FlexBlock,
