@@ -66,6 +66,31 @@ test.describe("UI plugin — block matrix", () => {
     });
   }
 
+  test("BreadcrumbBlock applies max width and side margins inline", async ({
+    adminRequest,
+    page,
+  }) => {
+    const slug = "ui-breadcrumb-width";
+    await createPage(adminRequest, {
+      title: "Breadcrumb width",
+      slug,
+      content: puckWith([
+        block("BreadcrumbBlock", { maxWidth: 640, marginLeft: 24, marginRight: 32 }),
+      ]),
+      published: true,
+    });
+
+    const res = await page.goto(`/${slug}`);
+    expect(res.status()).toBe(200);
+
+    // data-ui-block is a stable hook on the block's own wrapper — it
+    // doesn't depend on Ant Design's internal class names.
+    const box = page.locator('[data-ui-block="breadcrumb"]');
+    await expect(box).toHaveCSS("max-width", "640px");
+    await expect(box).toHaveCSS("margin-left", "24px");
+    await expect(box).toHaveCSS("margin-right", "32px");
+  });
+
   // NOTE: FlexBlock, GridRowBlock, and ColBlock are Puck slot-based
   // containers — their render function expects a hydrated slot
   // component prop (the DropZone), not plain children. Constructing

@@ -1,5 +1,8 @@
 import styles from "../styles/ui-blocks.module.css";
 
+/** Per-side padding, falling back to the legacy single `padding` prop. */
+const side = (value, legacy) => (typeof value === "number" ? value : legacy || 0);
+
 export const FlexBlock = {
   label: "Flex",
   fields: {
@@ -41,7 +44,10 @@ export const FlexBlock = {
         { label: "Wrap", value: "wrap" },
       ],
     },
-    padding: { type: "number", label: "Padding (px)" },
+    paddingTop: { type: "number", label: "Padding Top (px)" },
+    paddingRight: { type: "number", label: "Padding Right (px)" },
+    paddingBottom: { type: "number", label: "Padding Bottom (px)" },
+    paddingLeft: { type: "number", label: "Padding Left (px)" },
     content: {
       type: "slot",
     },
@@ -52,9 +58,24 @@ export const FlexBlock = {
     alignItems: "stretch",
     justifyContent: "flex-start",
     wrap: "nowrap",
-    padding: 0,
+    paddingTop: 0,
+    paddingRight: 0,
+    paddingBottom: 0,
+    paddingLeft: 0,
   },
-  render: ({ direction, gap, alignItems, justifyContent, wrap, padding, content: Content }) => (
+  render: ({
+    direction,
+    gap,
+    alignItems,
+    justifyContent,
+    wrap,
+    padding,
+    paddingTop,
+    paddingRight,
+    paddingBottom,
+    paddingLeft,
+    content: Content,
+  }) => (
     <Content
       className={styles.flexContainer}
       style={{
@@ -64,7 +85,10 @@ export const FlexBlock = {
         alignItems: alignItems || "stretch",
         justifyContent: justifyContent || "flex-start",
         flexWrap: wrap || "nowrap",
-        padding: padding || 0,
+        paddingTop: side(paddingTop, padding),
+        paddingRight: side(paddingRight, padding),
+        paddingBottom: side(paddingBottom, padding),
+        paddingLeft: side(paddingLeft, padding),
         minHeight: 60,
       }}
     />
