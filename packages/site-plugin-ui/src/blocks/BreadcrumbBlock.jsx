@@ -14,6 +14,9 @@ export const BreadcrumbBlock = {
       defaultItemProps: { label: "Page", href: "/" },
       getItemSummary: (item) => item.label || "Item",
     },
+    maxWidth: { type: "number", label: "Max Width (px, 0 = full width)" },
+    marginLeft: { type: "number", label: "Margin Left (px)" },
+    marginRight: { type: "number", label: "Margin Right (px)" },
   },
   defaultProps: {
     items: [
@@ -21,9 +24,20 @@ export const BreadcrumbBlock = {
       { label: "Products", href: "/products" },
       { label: "Current Page", href: "" },
     ],
+    maxWidth: 0,
+    marginLeft: 0,
+    marginRight: 0,
   },
-  render: ({ items }) => (
-    <div className={styles.breadcrumbBlock}>
+  render: ({ items, maxWidth, marginLeft, marginRight }) => (
+    <div
+      data-ui-block="breadcrumb"
+      className={styles.breadcrumbBlock}
+      style={{
+        maxWidth: maxWidth ? `${maxWidth}px` : undefined,
+        marginLeft: marginLeft || 0,
+        marginRight: marginRight || 0,
+      }}
+    >
       <Breadcrumb
         items={(items ?? []).map((item) => ({
           title: item.href ? (
