@@ -2,10 +2,49 @@ import { readFileSync, readdirSync, existsSync } from "fs";
 import { resolve, join } from "path";
 
 /**
+ * Option lists are written as `{ label: "Yes", value: "yes" }` but the
+ * value is just as often a boolean or a number. Parsing only quoted
+ * values leaves the list empty, and an empty list makes every stored
+ * value look invalid.
+ */
+function parseOptionList(body) {
+  const entries = body.matchAll(
+    /\{\s*label:\s*"([^"]*)"\s*,\s*value:\s*(?:"([^"]*)"|([\w.+-]+))\s*\}/g,
+  );
+  const options = [];
+  for (const o of entries) {
+    let value;
+    if (o[2] !== undefined) value = o[2];
+    else if (o[3] === "true" || o[3] === "false") value = o[3] === "true";
+    else if (!Number.isNaN(Number(o[3]))) value = Number(o[3]);
+    else value = o[3];
+    options.push({ label: o[1], value });
+  }
+  return options;
+}
+
+/**
+ * Resolve a block's fields when they aren't written inline — `fields,`
+ * or `fields: sharedFields` pointing at a `const` elsewhere in the file.
+ * Returns the object literal's body, or null when there's nothing to
+ * resolve.
+ */
+function resolveReferencedFields(blockSource, fileSource) {
+  const ref = blockSource.match(/\bfields\s*(?:,|:\s*([A-Za-z_$][\w$]*)\s*,)/);
+  if (!ref) return null;
+  const name = ref[1] || "fields";
+  const decl = new RegExp(
+    `(?:export\\s+)?(?:const|let|var)\\s+${name}\\s*=\\s*\\{`,
+  ).exec(fileSource);
+  if (!decl) return null;
+  return extractObjectBody(fileSource, decl.index + decl[0].length - 1);
+}
+
+/**
  * Parse a .jsx/.js block file and extract fields, defaultProps, and label
  * using regex. Works without JSX transpilation.
  */
-function parseBlockSource(source, blockName) {
+function parseBlockSource(source, blockName, fileSource = source) {
   const schema = {
     label: blockName.replace(/Block$/, ""),
     fields: {},
@@ -37,7 +76,14 @@ function parseBlockSource(source, blockName) {
 
   // First, find the fields: { ... } block
   const fieldsBlockMatch = source.match(/fields:\s*\{([\s\S]*?)\n\s*\},?\s*(?:defaultProps|render|resolvePermissions)/);
-  const fieldsStr = fieldsBlockMatch ? fieldsBlockMatch[1] : source;
+  // A block can also reference a fields object defined elsewhere in the
+  // file — `fields,` (shorthand) or `fields: sharedFields`. Without this
+  // the block parses with zero fields, and every real prop on it then
+  // looks unknown.
+  const fieldsStr =
+    (fieldsBlockMatch && fieldsBlockMatch[1]) ??
+    resolveReferencedFields(source, fileSource) ??
+    source;
 
   while ((fieldMatch = fieldPattern.exec(fieldsStr)) !== null) {
     const fieldName = fieldMatch[1];
@@ -60,8 +106,7 @@ function parseBlockSource(source, blockName) {
       const afterField = fieldsStr.substring(fieldMatch.index);
       const optionsMatch = afterField.match(/options:\s*\[([\s\S]*?)\]/);
       if (optionsMatch) {
-        const optEntries = optionsMatch[1].matchAll(/\{\s*label:\s*"([^"]*)",\s*value:\s*"([^"]*)"\s*\}/g);
-        field.options = [...optEntries].map((o) => ({ label: o[1], value: o[2] }));
+        field.options = parseOptionList(optionsMatch[1]);
       }
     }
 
@@ -92,6 +137,22 @@ function parseBlockSource(source, blockName) {
     schema.fields[fieldName] = field;
   }
 
+  // Fields can also be produced by a helper — `image: imageField("Photo")`,
+  // `oldItems: itemArray("Old items")`. We can't know their shape without
+  // evaluating the module, but we can record that the prop exists, which
+  // is what a client needs in order to send it.
+  for (const entry of splitTopLevel(fieldsStr)) {
+    const call = entry
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/\/\/[^\n]*/g, "")
+      .trim()
+      .match(/^["']?([\w$]+)["']?\s*:\s*[\w$.]+\s*\(/);
+    if (!call) continue;
+    const name = call[1];
+    if (schema.fields[name]) continue;
+    schema.fields[name] = { type: "custom", label: name };
+  }
+
   return schema;
 }
 
@@ -109,7 +170,7 @@ function scanBlockDir(dir) {
       const blockName = file.replace(/\.(jsx|js)$/, "");
       try {
         const source = readFileSync(join(dir, file), "utf-8");
-        blocks[blockName] = parseBlockSource(source, blockName);
+        blocks[blockName] = parseBlockSource(source, blockName, source);
       } catch {
         // Skip unreadable files
       }
@@ -146,7 +207,7 @@ function scanBlockDirRecursive(dir) {
             if (entry.name.match(/Block\.(jsx|js)$/)) {
               // File named *Block.jsx — parse directly
               const blockName = entry.name.replace(/\.(jsx|js)$/, "");
-              blocks[blockName] = parseBlockSource(source, blockName);
+              blocks[blockName] = parseBlockSource(source, blockName, source);
             }
 
             // Also look for exported *Block constants in any file
@@ -162,6 +223,7 @@ function scanBlockDirRecursive(dir) {
               blocks[blockName] = parseBlockSource(
                 source.substring(startIdx),
                 blockName,
+                source,
               );
             }
           } catch {
@@ -517,10 +579,20 @@ const RUNTIME_BLOCK_TYPES = [/^SymbolRef_/];
 
 /**
  * Validate Puck content JSON against discovered block schemas.
- * Returns { valid: true } or { valid: false, errors: [...] }.
+ * Returns { valid: true } or { valid: false, errors: [...] }, plus any
+ * non-fatal `warnings`.
+ *
+ * Only problems that would store unrenderable content are errors — an
+ * unknown block type, or content that isn't an array of blocks. Field
+ * checks are advisory: block schemas are recovered by reading source
+ * with regex, and fields built by a helper (`image: imageField(...)`)
+ * or spread from a shared object can't be seen that way. Failing a
+ * write on them would reject a page's own props read back seconds
+ * earlier, which is worse than the mistakes it would catch.
  */
 export function validatePuckContent(content, blockSchemas) {
   const errors = [];
+  const warnings = [];
 
   if (!Array.isArray(content)) {
     return { valid: false, errors: ["content must be an array of block objects"] };
@@ -560,20 +632,26 @@ export function validatePuckContent(content, blockSchemas) {
             errors.push(`content[${i}].props.${fieldName} > ${err}`);
           }
         }
+        for (const warn of slotResult.warnings || []) {
+          warnings.push(`content[${i}].props.${fieldName} > ${warn}`);
+        }
       }
 
       // Check select/radio values against options
       if (
         (fieldDef.type === "select" || fieldDef.type === "radio") &&
-        fieldDef.options &&
+        fieldDef.options?.length &&
         props[fieldName] !== undefined
       ) {
         const validValues = fieldDef.options.map((o) =>
           typeof o === "object" ? o.value : o,
         );
-        if (!validValues.includes(props[fieldName])) {
-          errors.push(
-            `content[${i}].props.${fieldName}: invalid value "${props[fieldName]}". Valid: ${validValues.join(", ")}`,
+        // Compare as strings: an option can be a boolean or a number,
+        // and JSON round-tripping doesn't always preserve which.
+        const asText = validValues.map((v) => String(v));
+        if (!asText.includes(String(props[fieldName]))) {
+          warnings.push(
+            `content[${i}].props.${fieldName}: unexpected value "${props[fieldName]}". Known: ${asText.join(", ")}`,
           );
         }
       }
@@ -583,14 +661,14 @@ export function validatePuckContent(content, blockSchemas) {
     for (const propName of Object.keys(props)) {
       if (propName === "id") continue; // Puck internal
       if (!schema.fields[propName]) {
-        errors.push(
-          `content[${i}].props.${propName}: unknown field for block type "${block.type}"`,
+        warnings.push(
+          `content[${i}].props.${propName}: not in the parsed schema for block type "${block.type}"`,
         );
       }
     }
   }
 
   return errors.length === 0
-    ? { valid: true }
-    : { valid: false, errors };
+    ? { valid: true, warnings }
+    : { valid: false, errors, warnings };
 }
