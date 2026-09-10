@@ -126,7 +126,8 @@ function scanBlockDir(dir) {
  */
 function scanBlockDirRecursive(dir) {
   const blocks = {};
-  if (!existsSync(dir)) return blocks;
+  const aliases = {};
+  if (!existsSync(dir)) return { blocks, aliases };
 
   function walk(d) {
     try {
@@ -139,6 +140,8 @@ function scanBlockDirRecursive(dir) {
         } else if (entry.name.match(/\.(jsx|js)$/)) {
           try {
             const source = readFileSync(fullPath, "utf-8");
+
+            Object.assign(aliases, parseRegistryAliases(source));
 
             if (entry.name.match(/Block\.(jsx|js)$/)) {
               // File named *Block.jsx — parse directly
@@ -171,7 +174,7 @@ function scanBlockDirRecursive(dir) {
     }
   }
   walk(dir);
-  return blocks;
+  return { blocks, aliases };
 }
 
 /**
@@ -232,12 +235,165 @@ function parseRootFieldsFromSource(source) {
 }
 
 /**
+ * Return the body of the object literal whose opening brace sits at
+ * `openIdx`, or null when the braces never balance.
+ */
+function extractObjectBody(source, openIdx) {
+  let depth = 0;
+  for (let i = openIdx; i < source.length; i++) {
+    const ch = source[i];
+    if (ch === "{") depth++;
+    else if (ch === "}") {
+      depth--;
+      if (depth === 0) return source.slice(openIdx + 1, i);
+    }
+  }
+  return null;
+}
+
+/**
+ * Split an object-literal body on its top-level commas, ignoring the
+ * ones nested inside braces, brackets or parens.
+ */
+function splitTopLevel(body) {
+  const parts = [];
+  let depth = 0;
+  let start = 0;
+  for (let i = 0; i < body.length; i++) {
+    const ch = body[i];
+    if (ch === "{" || ch === "[" || ch === "(") depth++;
+    else if (ch === "}" || ch === "]" || ch === ")") depth--;
+    else if (ch === "," && depth === 0) {
+      parts.push(body.slice(start, i));
+      start = i + 1;
+    }
+  }
+  parts.push(body.slice(start));
+  return parts;
+}
+
+/**
+ * Map every named import to the basename of the module it came from:
+ * `import { buildLanguageSwitcherBlock } from "./blocks/LanguageSwitcherBlock.jsx"`
+ * yields { buildLanguageSwitcherBlock: "LanguageSwitcherBlock" }. That
+ * basename is how file scanning keys the block a factory returns.
+ */
+function parseImportSources(source) {
+  const imports = {};
+  const pattern = /import\s*\{([^}]+)\}\s*from\s*["']([^"']+)["']/g;
+  let m;
+  while ((m = pattern.exec(source)) !== null) {
+    const base = m[2].split("/").pop().replace(/\.(jsx|js)$/, "");
+    for (const raw of m[1].split(",")) {
+      const name = raw.trim().split(/\s+as\s+/).pop().trim();
+      if (name) imports[name] = base;
+    }
+  }
+  return imports;
+}
+
+/**
+ * Parse a block *registry* — the object literal a site or plugin hands
+ * to Puck as its components map. Its keys are the block type names that
+ * end up stored in page content; its values are the imported block
+ * definitions, and those export names are what file scanning keys
+ * blocks by.
+ *
+ * `{ HeroSection: HeroSectionBlock }` therefore means the real block
+ * type is "HeroSection" — writing "HeroSectionBlock" into a page would
+ * store a type the front end can't render. Returns the mapping as
+ * { registryKey: exportedName } so discovery can rename accordingly.
+ */
+function parseRegistryAliases(source) {
+  const aliases = {};
+  const imports = parseImportSources(source);
+  // `const baseBlocks = {`, `const allBlocks = {`, `blocks: {`, `components: {`
+  const declPattern = /(?:(?:export\s+)?(?:const|let|var)\s+\w*[Bb]locks\s*=\s*|\b(?:blocks|components)\s*:\s*)\{/g;
+  let decl;
+  while ((decl = declPattern.exec(source)) !== null) {
+    const openIdx = decl.index + decl[0].length - 1;
+    const body = extractObjectBody(source, openIdx);
+    if (body === null) continue;
+    // Strip comments before splitting — a comma inside a comment would
+    // otherwise tear an entry in half.
+    const clean = body
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/\/\/[^\n]*/g, "");
+    for (let entry of splitTopLevel(clean)) {
+      entry = entry.trim();
+      if (!entry || entry.startsWith("...")) continue;
+
+      // `HeroSection: HeroSectionBlock`
+      const pair = entry.match(/^["']?([\w$]+)["']?\s*:\s*([\w$]+)$/);
+      if (pair) {
+        aliases[pair[1]] = pair[2];
+        continue;
+      }
+      // `LanguageSwitcher: buildLanguageSwitcherBlock({ ... })` — a block
+      // built by a factory. The definition lives in the file the factory
+      // was imported from, which is what file scanning keyed it by.
+      const factory = entry.match(/^["']?([\w$]+)["']?\s*:\s*([\w$]+)\s*\(/);
+      if (factory) {
+        aliases[factory[1]] = imports[factory[2]] || factory[2];
+        continue;
+      }
+      const shorthand = entry.match(/^([\w$]+)$/);
+      if (shorthand) aliases[shorthand[1]] = shorthand[1];
+    }
+  }
+  return aliases;
+}
+
+/**
+ * Re-key discovered blocks onto the names the registry actually uses,
+ * and drop the export names that the registry renamed away — writing
+ * to those would store an unrenderable block type.
+ */
+function applyRegistryAliases(blocks, aliases) {
+  const registryKeys = new Set(Object.keys(aliases));
+  for (const [key, exportName] of Object.entries(aliases)) {
+    if (key === exportName) continue;
+    if (blocks[exportName] && !blocks[key]) blocks[key] = blocks[exportName];
+  }
+  for (const [key, exportName] of Object.entries(aliases)) {
+    if (key === exportName) continue;
+    // The export may itself be registered under its own name elsewhere.
+    if (registryKeys.has(exportName)) continue;
+    delete blocks[exportName];
+  }
+}
+
+/**
+ * Every installed @premast plugin that can contribute blocks. Scanning
+ * the scope directory rather than a hardcoded list means a newly
+ * installed plugin's blocks show up without a plugin release.
+ */
+function premastPluginDirs(cwd) {
+  const scope = resolve(cwd, "node_modules/@premast");
+  if (!existsSync(scope)) return [];
+  const dirs = [];
+  try {
+    for (const name of readdirSync(scope)) {
+      if (!name.startsWith("site-plugin-")) continue;
+      dirs.push({
+        blocksDir: join(scope, name, "src/blocks"),
+        indexFile: join(scope, name, "src/index.js"),
+      });
+    }
+  } catch {
+    // Scope dir not readable
+  }
+  return dirs;
+}
+
+/**
  * Discover all available blocks automatically by scanning source files.
  * No DB sync needed — reads directly from disk.
  *
  * Sources:
  * 1. Installed @premast plugin packages (node_modules)
  * 2. Site's own block files (components/**)
+ * 3. The site's Puck config, which decides each block's final type name
  */
 export async function discoverAllBlocks() {
   const cwd = process.cwd();
@@ -245,30 +401,34 @@ export async function discoverAllBlocks() {
   const categories = {};
   let rootFields = {};
 
+  // Registry key -> exported block name, collected as we go.
+  const aliases = {};
+
   // 1. Scan plugin block source files from node_modules
-  const pluginDirs = [
-    {
-      blocksDir: resolve(cwd, "node_modules/@premast/site-plugin-ui/src/blocks"),
-      indexFile: resolve(cwd, "node_modules/@premast/site-plugin-ui/src/index.js"),
-    },
-    {
-      blocksDir: resolve(cwd, "node_modules/@premast/site-plugin-mcp/src/blocks"),
-      indexFile: resolve(cwd, "node_modules/@premast/site-plugin-mcp/src/index.js"),
-    },
-  ];
-
-  for (const { blocksDir, indexFile } of pluginDirs) {
+  for (const { blocksDir, indexFile } of premastPluginDirs(cwd)) {
     const pluginBlocks = scanBlockDir(blocksDir);
-    Object.assign(blocks, pluginBlocks);
 
-    // Parse categories from plugin index
+    let indexSource = null;
     if (existsSync(indexFile)) {
       try {
-        const source = readFileSync(indexFile, "utf-8");
-        Object.assign(categories, parseCategoriesFromSource(source));
+        indexSource = readFileSync(indexFile, "utf-8");
       } catch {
-        // Skip
+        // Skip unreadable index
       }
+    }
+
+    for (const [name, schema] of Object.entries(pluginBlocks)) {
+      // A plugin can ship block files it never registers (dead code, or
+      // a block wired up elsewhere). Only offer the ones its entry point
+      // actually references — otherwise we advertise unplaceable types.
+      if (indexSource && !new RegExp(`\\b${name}\\b`).test(indexSource)) continue;
+      blocks[name] = schema;
+    }
+
+    // Parse categories and the plugin's own block registry from its index
+    if (indexSource) {
+      Object.assign(categories, parseCategoriesFromSource(indexSource));
+      Object.assign(aliases, parseRegistryAliases(indexSource));
     }
   }
 
@@ -287,13 +447,45 @@ export async function discoverAllBlocks() {
   const siteBlockDirs = [
     resolve(cwd, "components"),
   ];
+  const siteBlockNames = new Set();
+  const siteAliases = {};
   for (const dir of siteBlockDirs) {
-    const siteBlocks = scanBlockDirRecursive(dir);
+    const site = scanBlockDirRecursive(dir);
     // Site blocks override package blocks
-    Object.assign(blocks, siteBlocks);
+    Object.assign(blocks, site.blocks);
+    Object.assign(siteAliases, site.aliases);
+    for (const name of Object.keys(site.blocks)) siteBlockNames.add(name);
   }
 
-  // 4. Fallback: try DB manifest if no blocks found from files
+  // 4. The site's Puck config is where blocks get their final names —
+  //    e.g. `HeroSection: HeroSectionBlock`. Read it last so its keys win.
+  for (const file of ["puck.config.js", "puck.config.jsx", "site.config.js", "site.config.jsx"]) {
+    const configPath = resolve(cwd, file);
+    if (!existsSync(configPath)) continue;
+    try {
+      Object.assign(siteAliases, parseRegistryAliases(readFileSync(configPath, "utf-8")));
+    } catch {
+      // Skip unreadable config
+    }
+  }
+
+  // Rename discovered blocks onto the types actually stored in content.
+  Object.assign(aliases, siteAliases);
+  applyRegistryAliases(blocks, aliases);
+
+  // Scanning components/** also turns up block definitions the site
+  // never registers — leftovers from the starter, or helpers used inside
+  // another block. Once we've read the site's own registry, drop them:
+  // offering a type Puck can't render is how unrenderable content gets
+  // written. If we couldn't read that registry we keep every candidate,
+  // since a short list is only useful when it's the accurate one.
+  if (Object.keys(siteAliases).length > 0) {
+    for (const name of siteBlockNames) {
+      if (siteAliases[name] === undefined) delete blocks[name];
+    }
+  }
+
+  // 5. Fallback: try DB manifest if no blocks found from files
   if (Object.keys(blocks).length === 0) {
     try {
       const mongoose = await import("mongoose");
@@ -314,6 +506,14 @@ export async function discoverAllBlocks() {
 
   return { blocks, categories, rootFields };
 }
+
+/**
+ * Block types that exist at runtime but are declared in no source file.
+ * The symbols plugin registers one Puck component per reusable
+ * component (`SymbolRef_<id>`), so stored content legitimately contains
+ * types discovery can never see.
+ */
+const RUNTIME_BLOCK_TYPES = [/^SymbolRef_/];
 
 /**
  * Validate Puck content JSON against discovered block schemas.
@@ -339,6 +539,7 @@ export function validatePuckContent(content, blockSchemas) {
 
     const schema = blockSchemas[block.type];
     if (!schema) {
+      if (RUNTIME_BLOCK_TYPES.some((re) => re.test(block.type))) continue;
       errors.push(
         `content[${i}]: unknown block type "${block.type}". Available: ${Object.keys(blockSchemas).join(", ")}`,
       );

@@ -90,7 +90,7 @@ export function registerPageTools(server, getBlocks) {
       content: z
         .array(
           z.object({
-            type: z.string().describe("Block type name (e.g. 'HeroBlock')"),
+            type: z.string().describe("Block type name exactly as list_blocks reports it"),
             props: z.record(z.any()).optional().describe("Block props matching the block's field definitions"),
           }),
         )

@@ -1,5 +1,6 @@
 import { HeroBlock } from "../pages/Home/HeroBlock";
 import { ContentBlock } from "../pages/Home/ContentBlock";
+import { PromoBannerBlock } from "../pages/Home/PromoBannerBlock";
 import { HeaderBlock } from "../layout/HeaderBlock";
 import { FooterBlock } from "../layout/FooterBlock";
 import { HeadingBlock } from "../ui/HeadingBlock";
@@ -22,6 +23,9 @@ import { ArticleMetaBlock } from "../pages/article/ArticleMetaBlock";
 export const baseBlocks = {
    HeroBlock,
    ContentBlock,
+   // Deliberately registered under a name that differs from the export —
+   // MCP block discovery must report "PromoBanner", the type Puck stores.
+   PromoBanner: PromoBannerBlock,
    HeaderBlock,
    FooterBlock,
    HeadingBlock,
@@ -35,7 +39,7 @@ export const baseBlocks = {
 export const baseCategories = {
    home: {
       title: "Home",
-      components: ["HeroBlock", "ContentBlock"],
+      components: ["HeroBlock", "ContentBlock", "PromoBanner"],
       defaultExpanded: true,
    },
    global: {
