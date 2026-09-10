@@ -112,6 +112,12 @@ test.describe("MCP plugin — block type names", () => {
     // not a hardcoded ui/mcp pair.
     expect(blocks.SymbolBlock, "symbols plugin block must be discoverable").toBeTruthy();
     expect(blocks.FlexBlock, "ui plugin blocks must still be discoverable").toBeTruthy();
+
+    // i18n builds its block from a factory — `LanguageSwitcher:
+    // buildLanguageSwitcherBlock({...})` — so the registry key differs
+    // from the file the definition was scanned out of.
+    expect(blocks.LanguageSwitcher, "factory-built block must use its registry key").toBeTruthy();
+    expect(blocks.LanguageSwitcherBlock).toBeUndefined();
   });
 
   test("create_page accepts the registry name and stores it verbatim", async ({

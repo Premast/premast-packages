@@ -273,6 +273,26 @@ function splitTopLevel(body) {
 }
 
 /**
+ * Map every named import to the basename of the module it came from:
+ * `import { buildLanguageSwitcherBlock } from "./blocks/LanguageSwitcherBlock.jsx"`
+ * yields { buildLanguageSwitcherBlock: "LanguageSwitcherBlock" }. That
+ * basename is how file scanning keys the block a factory returns.
+ */
+function parseImportSources(source) {
+  const imports = {};
+  const pattern = /import\s*\{([^}]+)\}\s*from\s*["']([^"']+)["']/g;
+  let m;
+  while ((m = pattern.exec(source)) !== null) {
+    const base = m[2].split("/").pop().replace(/\.(jsx|js)$/, "");
+    for (const raw of m[1].split(",")) {
+      const name = raw.trim().split(/\s+as\s+/).pop().trim();
+      if (name) imports[name] = base;
+    }
+  }
+  return imports;
+}
+
+/**
  * Parse a block *registry* — the object literal a site or plugin hands
  * to Puck as its components map. Its keys are the block type names that
  * end up stored in page content; its values are the imported block
@@ -286,6 +306,7 @@ function splitTopLevel(body) {
  */
 function parseRegistryAliases(source) {
   const aliases = {};
+  const imports = parseImportSources(source);
   // `const baseBlocks = {`, `const allBlocks = {`, `blocks: {`, `components: {`
   const declPattern = /(?:(?:export\s+)?(?:const|let|var)\s+\w*[Bb]locks\s*=\s*|\b(?:blocks|components)\s*:\s*)\{/g;
   let decl;
@@ -302,9 +323,18 @@ function parseRegistryAliases(source) {
       entry = entry.trim();
       if (!entry || entry.startsWith("...")) continue;
 
+      // `HeroSection: HeroSectionBlock`
       const pair = entry.match(/^["']?([\w$]+)["']?\s*:\s*([\w$]+)$/);
       if (pair) {
         aliases[pair[1]] = pair[2];
+        continue;
+      }
+      // `LanguageSwitcher: buildLanguageSwitcherBlock({ ... })` — a block
+      // built by a factory. The definition lives in the file the factory
+      // was imported from, which is what file scanning keyed it by.
+      const factory = entry.match(/^["']?([\w$]+)["']?\s*:\s*([\w$]+)\s*\(/);
+      if (factory) {
+        aliases[factory[1]] = imports[factory[2]] || factory[2];
         continue;
       }
       const shorthand = entry.match(/^([\w$]+)$/);
