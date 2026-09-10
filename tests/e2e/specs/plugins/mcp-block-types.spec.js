@@ -118,6 +118,13 @@ test.describe("MCP plugin — block type names", () => {
     // from the file the definition was scanned out of.
     expect(blocks.LanguageSwitcher, "factory-built block must use its registry key").toBeTruthy();
     expect(blocks.LanguageSwitcherBlock).toBeUndefined();
+
+    // Fields aren't always inline literals. PromoBanner declares them as
+    // a shared const, builds one with a helper, and gives its radio
+    // boolean options — all three used to parse away to nothing.
+    const promo = blocks.PromoBanner.fields;
+    expect(Object.keys(promo).sort()).toEqual(["body", "boxed", "heading", "link"]);
+    expect(promo.boxed.options.map((o) => o.value)).toEqual([false, true]);
   });
 
   test("create_page accepts the registry name and stores it verbatim", async ({
@@ -136,6 +143,39 @@ test.describe("MCP plugin — block type names", () => {
     expect(fetched.isError, fetched.text).toBe(false);
     expect(fetched.text, "stored content must keep the registry type").toContain("PromoBanner");
     expect(fetched.text).not.toContain("PromoBannerBlock");
+  });
+
+  test("a page read back can be written unchanged", async ({ request, adminRequest }) => {
+    // Regression: block schemas are recovered from source with regex, so
+    // fields declared by shorthand, built by a helper, or given boolean
+    // radio options were invisible — and the write tools failed on them.
+    // A page's own props came back as "unknown field", which made
+    // get_page → update_page impossible on real content.
+    const call = await mcpSession(request, adminRequest, "mcp-roundtrip");
+
+    const props = {
+      heading: "Round trip",
+      body: "Unchanged",
+      boxed: false,
+      link: { href: "/kontakt", text: "Contact" },
+    };
+    const created = await call("create_page", {
+      title: "Round trip",
+      slug: "mcp-promo-roundtrip",
+      content: [{ type: "PromoBanner", props }],
+    });
+    expect(created.isError, `create_page rejected valid props: ${created.text}`).toBe(false);
+    const pageId = JSON.parse(created.text).data._id;
+
+    const fetched = await call("get_page", { slug: "mcp-promo-roundtrip" });
+    expect(fetched.isError, fetched.text).toBe(false);
+    const stored = JSON.parse(fetched.text).data.content.content;
+
+    const written = await call("update_page", { id: pageId, content: stored });
+    expect(
+      written.isError,
+      `writing back untouched content must succeed: ${written.text}`,
+    ).toBe(false);
   });
 
   test("create_page rejects the export name", async ({ request, adminRequest }) => {
