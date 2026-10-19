@@ -4,6 +4,8 @@ import mongoose from "mongoose";
 import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, resolve } from "path";
+import { registerModels as registerCoreModels } from "@premast/site-core/db";
+import { collectHooks } from "@premast/site-core/services/hooks.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PKG_VERSION = JSON.parse(readFileSync(resolve(__dirname, "../package.json"), "utf-8")).version;
@@ -39,102 +41,13 @@ async function connectDB() {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Register core Mongoose models (same schemas as site-core)         */
+/*  Register Mongoose models                                          */
 /* ------------------------------------------------------------------ */
 
 async function registerModels() {
-  // Only register if not already registered (e.g. by another import)
-  if (!mongoose.models.Page) {
-    const pageSchema = new mongoose.Schema(
-      {
-        title: { type: String, required: true, trim: true },
-        slug: {
-          type: String,
-          required: true,
-          unique: true,
-          lowercase: true,
-          trim: true,
-          match: /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
-        },
-        content: { type: String, default: "" },
-        published: { type: Boolean, default: false },
-      },
-      { timestamps: true },
-    );
-    mongoose.model("Page", pageSchema);
-  }
-
-  if (!mongoose.models.Global) {
-    const globalSchema = new mongoose.Schema(
-      {
-        key: {
-          type: String,
-          required: true,
-          unique: true,
-          lowercase: true,
-          trim: true,
-          enum: ["header", "footer"],
-        },
-        content: { type: String, default: "" },
-        published: { type: Boolean, default: false },
-      },
-      { timestamps: true },
-    );
-    mongoose.model("Global", globalSchema);
-  }
-
-  if (!mongoose.models.ContentType) {
-    const contentTypeSchema = new mongoose.Schema(
-      {
-        name: { type: String, required: true, unique: true, trim: true },
-        slug: {
-          type: String,
-          required: true,
-          unique: true,
-          lowercase: true,
-          trim: true,
-          match: /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
-        },
-        urlPrefix: {
-          type: String,
-          required: true,
-          lowercase: true,
-          match: /^\/[a-z0-9]+(?:[/-][a-z0-9]+)*$/,
-        },
-        templateContent: { type: String, default: "" },
-        description: { type: String, default: "" },
-        published: { type: Boolean, default: false },
-      },
-      { timestamps: true },
-    );
-    mongoose.model("ContentType", contentTypeSchema);
-  }
-
-  if (!mongoose.models.ContentItem) {
-    const contentItemSchema = new mongoose.Schema(
-      {
-        title: { type: String, required: true, trim: true },
-        slug: {
-          type: String,
-          required: true,
-          lowercase: true,
-          trim: true,
-          match: /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
-        },
-        contentType: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "ContentType",
-          required: true,
-        },
-        content: { type: String, default: "" },
-        metadata: { type: mongoose.Schema.Types.Mixed, default: {} },
-        published: { type: Boolean, default: false },
-      },
-      { timestamps: true },
-    );
-    contentItemSchema.index({ contentType: 1, slug: 1 }, { unique: true });
-    mongoose.model("ContentItem", contentItemSchema);
-  }
+  // site-core's own models, so this process reads and writes the same
+  // schemas as the site, per-locale fields and unique indexes included.
+  const models = await registerCoreModels([]);
 
   if (!mongoose.models.McpToken) {
     const mcpTokenSchema = new mongoose.Schema(
@@ -182,6 +95,8 @@ async function registerModels() {
     );
     mongoose.model("BlockManifest", blockManifestSchema);
   }
+
+  return models;
 }
 
 /* ------------------------------------------------------------------ */
@@ -209,7 +124,13 @@ async function getBlocks() {
 export async function startMcpServer() {
   // 1. Connect to DB
   await connectDB();
-  await registerModels();
+  const models = await registerModels();
+
+  // This process runs outside the site, so there is no site config to
+  // take plugin hooks from. Writes run site-core's own save hooks
+  // (auto-redirect on a slug change) but not plugin hooks such as
+  // i18n's locale fill; the site's /api/mcp endpoint runs both.
+  const cms = { hooks: collectHooks([]), models };
 
   // 2. Validate token
   const rawToken = process.env.MCP_TOKEN;
@@ -236,11 +157,11 @@ export async function startMcpServer() {
   // 4. Register all tools
   registerAuthTools(server);
   registerBlockTools(server, getBlocks);
-  registerPageTools(server, getBlocks);
+  registerPageTools(server, getBlocks, cms);
   registerGlobalTools(server, getBlocks);
   registerContentTypeTools(server, getBlocks);
-  registerContentItemTools(server, getBlocks);
-  registerSeoTools(server);
+  registerContentItemTools(server, getBlocks, cms);
+  registerSeoTools(server, cms);
   registerInstructionTools(server);
 
   // 5. Start stdio transport

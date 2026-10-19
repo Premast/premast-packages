@@ -1,4 +1,4 @@
-import { runBeforeGlobalSave } from "../../config.js";
+import { runBeforeGlobalSave } from "../../services/hooks.js";
 
 export async function listGlobals(request, _params, { connectDB, session }) {
   await connectDB();

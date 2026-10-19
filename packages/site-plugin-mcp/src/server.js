@@ -345,6 +345,8 @@ async function mcpEndpoint(request, _params, context) {
   // Build a minimal siteConfig-like object for the handler
   const handler = await createMcpHandler({
     getConnectDB: async () => context.connectDB,
+    getHooks: async () => context.hooks,
+    getModels: async () => context.models,
   });
 
   return handler(request);
