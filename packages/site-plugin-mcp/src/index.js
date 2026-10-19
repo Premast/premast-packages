@@ -4,7 +4,7 @@ import { CustomBlock } from "./blocks/CustomBlock.jsx";
 export function mcpPlugin(options = {}) {
   return {
     name: "mcp",
-    version: "1.11.2",
+    version: "1.11.3",
 
     blocks: {
       CustomBlock,
