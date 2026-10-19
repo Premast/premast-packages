@@ -85,7 +85,7 @@ setInterval(cleanupStaleSessions, 5 * 60_000).unref?.();
 /*  Create an MCP server instance for a session                       */
 /* ------------------------------------------------------------------ */
 
-function createMcpServer(tokenDoc) {
+function createMcpServer(tokenDoc, cms) {
   const server = new McpServer({
     name: "cms",
     version: PKG_VERSION,
@@ -96,11 +96,11 @@ function createMcpServer(tokenDoc) {
 
   registerAuthTools(server);
   registerBlockTools(server, getBlocks);
-  registerPageTools(server, getBlocks);
+  registerPageTools(server, getBlocks, cms);
   registerGlobalTools(server, getBlocks);
   registerContentTypeTools(server, getBlocks);
-  registerContentItemTools(server, getBlocks);
-  registerSeoTools(server);
+  registerContentItemTools(server, getBlocks, cms);
+  registerSeoTools(server, cms);
   registerInstructionTools(server);
 
   return server;
@@ -126,6 +126,12 @@ function createMcpServer(tokenDoc) {
 export async function createMcpHandler(siteConfig) {
   // Get connectDB and ensure models are registered
   const connectDB = await siteConfig.getConnectDB();
+  // The site's hooks and models: page and content item writes save
+  // through site-core's save path with them, like the admin API does.
+  const cms = {
+    hooks: await siteConfig.getHooks?.(),
+    models: await siteConfig.getModels?.(),
+  };
 
   return async function mcpHandler(request) {
     const mongoose = (await import("mongoose")).default;
@@ -173,7 +179,7 @@ export async function createMcpHandler(siteConfig) {
         },
       });
 
-      const server = createMcpServer(tokenDoc);
+      const server = createMcpServer(tokenDoc, cms);
       await server.connect(transport);
 
       return transport.handleRequest(request);

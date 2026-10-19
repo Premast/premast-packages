@@ -114,6 +114,13 @@ src/
   auth/           → JWT, password hashing, middleware, session hooks
   db/             → MongoDB connection, models (Page, ContentType, ContentItem, Global, User)
   puck/           → Puck config builder, Ant Design field overrides
+  services/       → Server logic shared beyond the API. content-save.js is the
+                    save path for Pages and ContentItems (beforeXSave hooks →
+                    write → afterXSave hooks, incl. auto-redirect); the admin
+                    API and the MCP tools both save through it, so an agent's
+                    save runs the same hooks as an editor's. hooks.js collects
+                    the hooks. Neither imports JSX, so plain Node (the MCP
+                    stdio server) can load them.
   theme/          → CSS variable generator, condensed Puck CSS
   config.js       → createSiteConfig() — the central factory
   plugin.js       → Plugin normalization

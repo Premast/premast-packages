@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { runBeforePageSave } from "../../config.js";
+import * as contentSave from "../../services/content-save.js";
 
 export async function listPages(request, _params, { connectDB, session }) {
   await connectDB();
@@ -22,15 +22,14 @@ export async function listPages(request, _params, { connectDB, session }) {
 
 export async function createPage(request, _params, { connectDB, hooks }) {
   await connectDB();
-  const { Page } = (await import("../../db/models/Page.js"));
   const body = await request.json();
   const { title, slug, content, published, locale, translationGroupId } = body;
   if (!title || !slug) {
     return Response.json({ error: "title and slug are required" }, { status: 400 });
   }
   try {
-    // Build the initial doc, then let beforePageSave hooks (e.g. i18n)
-    // mutate it — typically to fill in locale/translationGroupId.
+    // Build the initial doc; the save path runs beforePageSave hooks
+    // (e.g. i18n) on it, then afterPageSave hooks.
     const initial = {
       title,
       slug,
@@ -39,17 +38,7 @@ export async function createPage(request, _params, { connectDB, hooks }) {
       ...(locale !== undefined ? { locale } : {}),
       ...(translationGroupId !== undefined ? { translationGroupId } : {}),
     };
-    const data = await runBeforePageSave(hooks, initial, "create");
-
-    const page = await Page.create(data);
-    // Run afterPageSave hooks
-    if (hooks?.afterPageSave) {
-      for (const { fn } of hooks.afterPageSave) {
-        try { await fn({ page: page.toObject(), action: "create" }); } catch (e) {
-          console.error("[premast] afterPageSave hook error:", e);
-        }
-      }
-    }
+    const page = await contentSave.createPage(initial, { hooks });
     return Response.json({ data: page }, { status: 201 });
   } catch (err) {
     if (err.code === 11000) {
@@ -77,7 +66,6 @@ export async function patchPage(request, params, { connectDB, hooks, models }) {
     return Response.json({ error: "invalid page id" }, { status: 400 });
   }
   await connectDB();
-  const { Page } = (await import("../../db/models/Page.js"));
   const body = await request.json();
   const allowed = ["title", "slug", "content", "published", "locale", "translationGroupId"];
   const update = {};
@@ -96,27 +84,9 @@ export async function patchPage(request, params, { connectDB, hooks, models }) {
     return Response.json({ error: "no valid fields to update" }, { status: 400 });
   }
 
-  // Snapshot the current document BEFORE the update so afterPageSave
-  // hooks (e.g. core auto-redirect) can compare oldDoc.slug vs the
-  // new value. Also passed to beforePageSave for symmetry.
-  const oldDoc = await Page.findById(params.id).lean();
-
-  // Allow beforePageSave hooks to enrich the update (e.g. fill locale).
-  const enriched = await runBeforePageSave(hooks, update, "update", oldDoc);
-
   try {
-    const page = await Page.findByIdAndUpdate(
-      params.id, { $set: enriched }, { returnDocument: "after", runValidators: true },
-    ).lean();
+    const page = await contentSave.updatePage(params.id, update, { hooks, models });
     if (!page) return Response.json({ error: "not found" }, { status: 404 });
-    // Run afterPageSave hooks
-    if (hooks?.afterPageSave) {
-      for (const { fn } of hooks.afterPageSave) {
-        try { await fn({ page, action: "update", oldDoc, models }); } catch (e) {
-          console.error("[premast] afterPageSave hook error:", e);
-        }
-      }
-    }
     return Response.json({ data: page });
   } catch (err) {
     if (err.code === 11000) {

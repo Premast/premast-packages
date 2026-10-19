@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { z } from "zod";
+import { updatePage } from "@premast/site-core/services/content-save.js";
 
 function requireAuth(session) {
   if (!session) {
@@ -7,7 +8,8 @@ function requireAuth(session) {
   }
 }
 
-export function registerSeoTools(server) {
+/** `cms` is `{ hooks, models }` from the site — see registerPageTools. */
+export function registerSeoTools(server, cms = {}) {
   server.tool(
     "get_seo",
     "Get SEO metadata for a page. Returns metaTitle, metaDescription, ogImage, etc. from the page's root props.",
@@ -108,7 +110,7 @@ export function registerSeoTools(server) {
         return { content: [{ type: "text", text: "Error: invalid page ID" }], isError: true };
       }
 
-      const page = await Page.findById(pageId);
+      const page = await Page.findById(pageId).lean();
       if (!page) {
         return { content: [{ type: "text", text: "Error: page not found" }], isError: true };
       }
@@ -139,8 +141,11 @@ export function registerSeoTools(server) {
       }
 
       Object.assign(puckData.root.props, seoUpdate);
-      page.content = JSON.stringify(puckData);
-      await page.save();
+      // Same save path as an admin save, so page save hooks run.
+      const saved = await updatePage(pageId, { content: JSON.stringify(puckData) }, cms);
+      if (!saved) {
+        return { content: [{ type: "text", text: "Error: page not found" }], isError: true };
+      }
 
       return {
         content: [

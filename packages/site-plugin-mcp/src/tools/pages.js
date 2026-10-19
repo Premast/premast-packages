@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { z } from "zod";
+import { createPage, updatePage } from "@premast/site-core/services/content-save.js";
 import { validatePuckContent } from "../block-discovery.js";
 
 function requireAuth(session) {
@@ -8,7 +9,12 @@ function requireAuth(session) {
   }
 }
 
-export function registerPageTools(server, getBlocks) {
+/**
+ * `cms` is `{ hooks, models }` from the site: writes go through
+ * site-core's save path with them, so they run the same hooks as an
+ * admin save (i18n fills locale, a slug change gets its 301, ...).
+ */
+export function registerPageTools(server, getBlocks, cms = {}) {
   server.tool(
     "list_pages",
     "List all pages with title, slug, published status, and timestamps",
@@ -109,7 +115,6 @@ export function registerPageTools(server, getBlocks) {
     },
     async ({ title, slug, content, root, published }) => {
       requireAuth(server._mcpSession);
-      const Page = mongoose.models.Page;
 
       // Validate content against block schemas
       if (content && content.length > 0) {
@@ -138,12 +143,15 @@ export function registerPageTools(server, getBlocks) {
       };
 
       try {
-        const page = await Page.create({
-          title,
-          slug,
-          content: JSON.stringify(puckData),
-          published: Boolean(published),
-        });
+        const page = await createPage(
+          {
+            title,
+            slug,
+            content: JSON.stringify(puckData),
+            published: Boolean(published),
+          },
+          cms,
+        );
         return {
           content: [
             {
@@ -259,11 +267,7 @@ export function registerPageTools(server, getBlocks) {
       }
 
       try {
-        const page = await Page.findByIdAndUpdate(
-          id,
-          { $set: update },
-          { returnDocument: "after", runValidators: true },
-        ).lean();
+        const page = await updatePage(id, update, cms);
         if (!page) {
           return { content: [{ type: "text", text: "Error: page not found" }], isError: true };
         }

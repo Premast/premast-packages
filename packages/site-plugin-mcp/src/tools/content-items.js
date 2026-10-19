@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { z } from "zod";
+import { createContentItem, updateContentItem } from "@premast/site-core/services/content-save.js";
 import { validatePuckContent } from "../block-discovery.js";
 
 function requireAuth(session) {
@@ -8,7 +9,12 @@ function requireAuth(session) {
   }
 }
 
-export function registerContentItemTools(server, getBlocks) {
+/**
+ * `cms` is `{ hooks, models }` from the site: writes go through
+ * site-core's save path with them, so they run the same hooks as an
+ * admin save (i18n fills locale, a slug change gets its 301, ...).
+ */
+export function registerContentItemTools(server, getBlocks, cms = {}) {
   server.tool(
     "list_content_items",
     "List content items, optionally filtered by content type",
@@ -115,7 +121,6 @@ export function registerContentItemTools(server, getBlocks) {
     },
     async ({ title, slug, contentType, content, root, metadata, published }) => {
       requireAuth(server._mcpSession);
-      const ContentItem = mongoose.models.ContentItem;
       const ContentTypeModel = mongoose.models.ContentType;
 
       if (!mongoose.isValidObjectId(contentType)) {
@@ -156,14 +161,17 @@ export function registerContentItemTools(server, getBlocks) {
         : "";
 
       try {
-        const item = await ContentItem.create({
-          title,
-          slug,
-          contentType,
-          content: puckData ? JSON.stringify(puckData) : "",
-          metadata: metadata || {},
-          published: Boolean(published),
-        });
+        const item = await createContentItem(
+          {
+            title,
+            slug,
+            contentType,
+            content: puckData ? JSON.stringify(puckData) : "",
+            metadata: metadata || {},
+            published: Boolean(published),
+          },
+          cms,
+        );
         return {
           content: [
             {
@@ -277,11 +285,7 @@ export function registerContentItemTools(server, getBlocks) {
       }
 
       try {
-        const item = await ContentItem.findByIdAndUpdate(
-          id,
-          { $set: update },
-          { returnDocument: "after", runValidators: true },
-        ).lean();
+        const item = await updateContentItem(id, update, cms);
         if (!item) {
           return { content: [{ type: "text", text: "Error: content item not found" }], isError: true };
         }

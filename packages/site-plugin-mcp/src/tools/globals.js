@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import { z } from "zod";
 import { validatePuckContent } from "../block-discovery.js";
+import { resolveLocale } from "../site-locales.js";
 
 function requireAuth(session) {
   if (!session) {
@@ -8,16 +9,24 @@ function requireAuth(session) {
   }
 }
 
+const localeArg = z
+  .string()
+  .nullish()
+  .describe(
+    "Locale code, e.g. 'en'. A multi-language site has a separate header and footer per locale; " +
+      "this defaults to the site's default locale. Omit it on a single-language site.",
+  );
+
 export function registerGlobalTools(server, getBlocks) {
   server.tool(
     "list_globals",
-    "List all globals (header, footer) with their published status",
+    "List all globals (header, footer) with their locale and published status",
     {},
     async () => {
       requireAuth(server._mcpSession);
       const Global = mongoose.models.Global;
-      const globals = await Global.find({}, { key: 1, published: 1, updatedAt: 1 })
-        .sort({ key: 1 })
+      const globals = await Global.find({}, { key: 1, locale: 1, published: 1, updatedAt: 1 })
+        .sort({ key: 1, locale: 1 })
         .lean();
       return {
         content: [{ type: "text", text: JSON.stringify({ data: globals }, null, 2) }],
@@ -27,16 +36,22 @@ export function registerGlobalTools(server, getBlocks) {
 
   server.tool(
     "get_global",
-    "Get a global element (header or footer) including its Puck content",
+    "Get a global element (header or footer) including its Puck content. On a multi-language site, pass locale to pick which language's copy (default: the site's default locale).",
     {
       key: z.enum(["header", "footer"]).describe("Global key: 'header' or 'footer'"),
+      locale: localeArg,
     },
-    async ({ key }) => {
+    async ({ key, locale: requested }) => {
       requireAuth(server._mcpSession);
       const Global = mongoose.models.Global;
-      const global = await Global.findOne({ key }).lean();
+      const { locale, error } = await resolveLocale(requested);
+      if (error) {
+        return { content: [{ type: "text", text: `Error: ${error}` }], isError: true };
+      }
+      const global = await Global.findOne({ key, locale }).lean();
       if (!global) {
-        return { content: [{ type: "text", text: `Error: global "${key}" not found. It may not have been created yet.` }], isError: true };
+        const where = locale ? ` for locale "${locale}"` : "";
+        return { content: [{ type: "text", text: `Error: global "${key}" not found${where}. It may not have been created yet.` }], isError: true };
       }
       let content = global.content;
       try {
@@ -54,9 +69,10 @@ export function registerGlobalTools(server, getBlocks) {
 
   server.tool(
     "update_global",
-    "Update a global element (header or footer) with Puck content. Use list_blocks first for block schemas.",
+    "Update a global element (header or footer) with Puck content. On a multi-language site, pass locale to pick which language's copy to edit (default: the site's default locale); other locales are left untouched, and a locale the site doesn't have is refused. Use list_blocks first for block schemas.",
     {
       key: z.enum(["header", "footer"]).describe("Global key: 'header' or 'footer'"),
+      locale: localeArg,
       content: z
         .array(
           z.object({
@@ -68,9 +84,13 @@ export function registerGlobalTools(server, getBlocks) {
         .describe("New Puck content array"),
       published: z.boolean().optional().describe("Set published status"),
     },
-    async ({ key, content, published }) => {
+    async ({ key, locale: requested, content, published }) => {
       requireAuth(server._mcpSession);
       const Global = mongoose.models.Global;
+      const { locale, error } = await resolveLocale(requested);
+      if (error) {
+        return { content: [{ type: "text", text: `Error: ${error}` }], isError: true };
+      }
 
       // Validate content if provided
       if (content && content.length > 0) {
@@ -106,8 +126,10 @@ export function registerGlobalTools(server, getBlocks) {
         return { content: [{ type: "text", text: "Error: no fields to update" }], isError: true };
       }
 
+      // Globals are stored per (key, locale). The upsert creates a missing
+      // header/footer only for a locale resolveLocale accepted.
       const global = await Global.findOneAndUpdate(
-        { key },
+        { key, locale },
         { $set: update },
         { returnDocument: "after", upsert: true, runValidators: true },
       ).lean();
@@ -117,7 +139,7 @@ export function registerGlobalTools(server, getBlocks) {
           {
             type: "text",
             text: JSON.stringify(
-              { data: { _id: global._id, key: global.key, published: global.published } },
+              { data: { _id: global._id, key: global.key, locale: global.locale, published: global.published } },
               null,
               2,
             ),
